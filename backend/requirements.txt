@@ -21,5 +21,8 @@ redis[asyncio]==5.0.4
 asyncpg==0.29.0
 sqlalchemy[asyncio]==2.0.29
 
+# Supabase
+supabase==2.3.5
+
 # 이메일 파싱 (Gmail IMAP)
 # (이메일 파싱 시스템 별도 파일 참조)

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: List[str] = ["*"]
     ALLOWED_ORIGINS: List[str] = ["*"]
 
+    # ── Supabase ──────────────────────────────────────────────────
+    SUPABASE_URL: str         = ""
+    SUPABASE_KEY: str         = ""   # service_role key (서버 전용)
+
     # ── 알리익스프레스 제휴 API ───────────────────────────────────
     # https://portals.aliexpress.com 에서 발급
     ALI_APP_KEY: str      = ""
