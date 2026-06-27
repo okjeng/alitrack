@@ -29,22 +29,13 @@ ALI_API_BASE = "https://api-sg.aliexpress.com/sync"
 
 def _build_ali_signature(params: dict, secret: str) -> str:
     """
-    알리 API 서명 생성
-    - md5: MD5(secret + k1v1k2v2... + secret)
-    - hmac/sha256: HMAC-SHA256(key=secret, msg=k1v1k2v2...)  ← secret 감싸기 없음
+    알리 Portals API 서명 생성 (sign_method=sha256)
+    SHA256(secret + sorted_k1v1k2v2... + secret)  — plain SHA256, HMAC 아님
     """
     sorted_params = sorted(params.items())
     params_str = "".join(f"{k}{v}" for k, v in sorted_params)
-    sign_method = params.get("sign_method", "sha256")
-    if sign_method == "md5":
-        import hashlib as _h
-        return _h.md5((secret + params_str + secret).encode("utf-8")).hexdigest().upper()
-    # sha256 / hmac: HMAC key=secret, msg=params_str (no wrapping)
-    return hmac.new(
-        secret.encode("utf-8"),
-        params_str.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest().upper()
+    sign_string = secret + params_str + secret
+    return hashlib.sha256(sign_string.encode("utf-8")).hexdigest().upper()
 
 
 def _build_common_params(method: str, extra: dict) -> dict:
