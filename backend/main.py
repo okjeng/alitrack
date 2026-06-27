@@ -101,3 +101,39 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/health", include_in_schema=False)
 async def health():
     return {"status": "ok", "timestamp": int(time.time())}
+
+
+# ─── 임시 디버그 (배포 확인 후 삭제) ─────────────────────────────
+@app.get("/debug/ali-raw", include_in_schema=False)
+async def debug_ali_raw(keyword: str = "phone"):
+    import time as _time
+    import hmac as _hmac
+    import hashlib as _hashlib
+    import httpx as _httpx
+    from src.config.settings import settings as _s
+
+    params = {
+        "app_key":    _s.ALI_APP_KEY,
+        "method":     "aliexpress.affiliate.hotproduct.query",
+        "timestamp":  str(int(_time.time() * 1000)),
+        "sign_method":"sha256",
+        "tracking_id": _s.ALI_TRACKING_ID,
+        "page_no":    "1",
+        "page_size":  "3",
+        "keywords":   keyword,
+        "sort":       "default",
+        "target_currency": "KRW",
+        "target_language": "ko",
+        "country":    "KR",
+    }
+    sorted_params = sorted(params.items())
+    sign_string = _s.ALI_APP_SECRET + "".join(f"{k}{v}" for k, v in sorted_params) + _s.ALI_APP_SECRET
+    params["sign"] = _hmac.new(
+        _s.ALI_APP_SECRET.encode("utf-8"),
+        sign_string.encode("utf-8"),
+        _hashlib.sha256,
+    ).hexdigest().upper()
+
+    async with _httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get("https://api-sg.aliexpress.com/sync", params=params)
+        return resp.json()
