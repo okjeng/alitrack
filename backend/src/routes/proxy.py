@@ -29,15 +29,20 @@ ALI_API_BASE = "https://api-sg.aliexpress.com/sync"
 
 def _build_ali_signature(params: dict, secret: str) -> str:
     """
-    알리 API HMAC-SHA256 서명 생성
-    APP_SECRET은 서버에만 있으므로 클라이언트에서 위조 불가
+    알리 API 서명 생성
+    - md5: MD5(secret + k1v1k2v2... + secret)
+    - hmac/sha256: HMAC-SHA256(key=secret, msg=k1v1k2v2...)  ← secret 감싸기 없음
     """
-    # 파라미터 정렬 후 문자열 조합
     sorted_params = sorted(params.items())
-    sign_string   = secret + "".join(f"{k}{v}" for k, v in sorted_params) + secret
+    params_str = "".join(f"{k}{v}" for k, v in sorted_params)
+    sign_method = params.get("sign_method", "sha256")
+    if sign_method == "md5":
+        import hashlib as _h
+        return _h.md5((secret + params_str + secret).encode("utf-8")).hexdigest().upper()
+    # sha256 / hmac: HMAC key=secret, msg=params_str (no wrapping)
     return hmac.new(
         secret.encode("utf-8"),
-        sign_string.encode("utf-8"),
+        params_str.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest().upper()
 
