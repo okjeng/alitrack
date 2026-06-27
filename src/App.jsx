@@ -40,6 +40,8 @@ const PRODUCT_TEMPLATES = [
 
 const PAGE_SIZE = 10; // 한 번에 로드할 상품 수
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://api.alitrack.kr";
+
 // ── 핵심: 더미 페이지 생성 함수 ──────────────────────────────────
 // API 연동 시 이 함수만 fetch('/api/products?page='+page) 로 교체
 const generateDummyPage = (page) => {
@@ -386,34 +388,41 @@ const BottomNav = ({ active, onNav }) => (
 // ═══════════════════════════════════════════════════════════════════
 // 모달: 로그인
 // ═══════════════════════════════════════════════════════════════════
-const LoginModal = ({ onSuccess, onDismiss }) => (
-  <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onDismiss}>
-    <div className="absolute inset-0 bg-black/40" />
-    <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
-         style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)"}}
-         onClick={e=>e.stopPropagation()}>
-      <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
-      <p className="text-xl font-extrabold text-gray-900 text-center">3초 만에 가입하고</p>
-      <p className="text-xl font-extrabold text-orange-500 text-center mb-1">최저가 알림 받기 🔔</p>
-      <p className="text-xs text-gray-400 text-center mb-7">간편 로그인으로 가입 즉시 이용 가능</p>
-      <div className="space-y-3">
-        {[
-          {label:"카카오톡으로 계속하기", bg:"#FEE500", text:"#181600", icon:"💬"},
-          {label:"네이버로 계속하기",     bg:"#03C75A", text:"#fff",    icon:"N", fw:true},
-          {label:"구글로 계속하기",       bg:"#fff",    text:"#444",    icon:"G", fw:true, border:true},
-        ].map(b=>(
-          <button key={b.label} onClick={onSuccess}
-            className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold transition active:scale-95 ${b.border?"border border-gray-200 shadow-sm":""}`}
-            style={{background:b.bg, color:b.text}}>
-            <span className={b.fw?"font-extrabold text-base":"text-lg"}>{b.icon}</span>
-            {b.label}
-          </button>
-        ))}
+const SOCIAL_PROVIDERS = [
+  { key:"kakao",  label:"카카오톡으로 계속하기", bg:"#FEE500", text:"#181600", icon:"💬" },
+  { key:"naver",  label:"네이버로 계속하기",     bg:"#03C75A", text:"#fff",    icon:"N",  fw:true },
+  { key:"google", label:"구글로 계속하기",       bg:"#fff",    text:"#444",    icon:"G",  fw:true, border:true },
+];
+
+const LoginModal = ({ onDismiss }) => {
+  const handleSocial = (key) => {
+    window.location.href = `${API_BASE}/api/auth/${key}/login`;
+  };
+  return (
+    <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onDismiss}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
+           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)"}}
+           onClick={e=>e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+        <p className="text-xl font-extrabold text-gray-900 text-center">3초 만에 가입하고</p>
+        <p className="text-xl font-extrabold text-orange-500 text-center mb-1">최저가 알림 받기 🔔</p>
+        <p className="text-xs text-gray-400 text-center mb-7">간편 로그인으로 가입 즉시 이용 가능</p>
+        <div className="space-y-3">
+          {SOCIAL_PROVIDERS.map(b => (
+            <button key={b.key} onClick={() => handleSocial(b.key)}
+              className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold transition active:scale-95 ${b.border ? "border border-gray-200 shadow-sm" : ""}`}
+              style={{background: b.bg, color: b.text}}>
+              <span className={b.fw ? "font-extrabold text-base" : "text-lg"}>{b.icon}</span>
+              {b.label}
+            </button>
+          ))}
+        </div>
+        <button onClick={onDismiss} className="w-full mt-4 py-2 text-xs text-gray-400">나중에 하기</button>
       </div>
-      <button onClick={onDismiss} className="w-full mt-4 py-2 text-xs text-gray-400">나중에 하기</button>
     </div>
-  </div>
-);
+  );
+};
 
 // 모달: 공유
 const ShareSheet = ({ product, onClose, showToast }) => {
@@ -1230,10 +1239,8 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
   const maxP         = useMemo(() => Math.max(...hist.map(d => d.price)), [hist]);
   const affiliateUrl = useMemo(() => buildAffiliateUrl(product.id), [product.id]);
 
-  const handleWish  = () => showLogin(() => {
-    setWished(w => { showToast(w ? "보관함에서 제거했어요" : "보관함에 저장했어요 🔖"); return !w; });
-  });
-  const handleAlert = () => showLogin(() => setAlertOpen(true));
+  const handleWish  = () => showLogin();
+  const handleAlert = () => showLogin();
 
   return (
     <>
@@ -1505,14 +1512,6 @@ const FeedbackSheet = ({ onClose, showToast }) => {
         />
         <p className="text-[10px] text-gray-400 text-right mt-1 mb-4">{text.length}/500</p>
 
-        {/* 카카오 채널 바로가기 */}
-        <a href="https://pf.kakao.com/_alitrack" target="_blank" rel="noopener noreferrer"
-           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl mb-3"
-           style={{background:"#FEE500", color:"#181600"}}>
-          <span className="text-lg">💬</span>
-          <span className="text-sm font-bold">카카오톡으로 바로 문의하기</span>
-        </a>
-
         <button onClick={submit}
           className="w-full py-4 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition">
           제출하기
@@ -1696,7 +1695,6 @@ const MoreScreen = ({ onBack, onFeedback, onPrivacy, onTerms }) => (
         <p className="text-xs font-bold text-gray-400 px-1 mb-2">고객 지원</p>
         {[
           { icon:"🐛", label:"오류 신고 · 기능 제안", action: onFeedback, badge:"문의하기" },
-          { icon:"💬", label:"카카오톡 채널 상담", action:()=>window.open("https://pf.kakao.com/_alitrack","_blank"), badge:"바로가기" },
         ].map(i => (
           <button key={i.label} onClick={i.action}
             className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-[#F7F7F8] active:bg-gray-100 transition mb-2">
@@ -1744,6 +1742,7 @@ export default function App() {
   const [selProduct, setSelProduct] = useState(null);
   const [selCat, setSelCat]         = useState(null);
   const [loginModal, setLoginModal] = useState(null);
+  const [user, setUser]             = useState(null);
   const [toast, setToast]           = useState({msg:"",visible:false});
   const toastTimer                  = useRef(null);
   const scrollPositions             = useRef({});
@@ -1773,6 +1772,23 @@ export default function App() {
     return () => window.removeEventListener("pwa-installable", handler);
   },[]);
 
+  // 소셜 로그인 후 ?login=ok 처리 + 인증 상태 확인
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "ok") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.logged_in) setUser(data); })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" })
+      .finally(() => { setUser(null); showToast("로그아웃되었습니다."); });
+  }, [showToast]);
+
   // ④ 피드백 시트
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -1782,8 +1798,7 @@ export default function App() {
     toastTimer.current=setTimeout(()=>setToast(p=>({...p,visible:false})),2200);
   },[]);
 
-  const showLogin = useCallback((onSuccess)=>setLoginModal({onSuccess}),[]);
-  const handleLoginSuccess = ()=>{ loginModal?.onSuccess?.(); setLoginModal(null); };
+  const showLogin = useCallback(()=>setLoginModal(true),[]);
   const handleLoginDismiss = ()=>setLoginModal(null);
 
   const saveScroll = useCallback(()=>{
@@ -1807,7 +1822,7 @@ export default function App() {
     setActiveNav(id);
     if(id==="home"){ goTo("home"); return; }
     if(id==="more"){ goTo("more"); return; }
-    showLogin(()=>goTo(id));
+    showLogin();
   },[goTo,showLogin]);
 
   useEffect(()=>{
@@ -1883,7 +1898,7 @@ export default function App() {
             </button>
             <p className="text-base font-bold text-gray-900">나의기록</p>
           </div>
-          <EmptyMypage onLogin={()=>showLogin(()=>showToast("로그인되었습니다!"))}/>
+          <EmptyMypage onLogin={showLogin}/>
         </div>
       );
       // 더보기 화면
@@ -1942,10 +1957,14 @@ export default function App() {
               <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full">BETA</span>
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={()=>showLogin(()=>showToast("알림 설정 페이지로 이동합니다"))}
+              <button onClick={showLogin}
                 className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">🔔</button>
-              <button onClick={()=>showLogin(()=>goTo("mypage"))}
-                className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">👤</button>
+              {user
+                ? <button onClick={handleLogout}
+                    className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-sm active:bg-orange-100 transition" title={user.email}>👤</button>
+                : <button onClick={showLogin}
+                    className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">👤</button>
+              }
               {/* ④ 피드백 버튼 (우상단 플로팅) */}
               <button onClick={()=>setShowFeedback(true)}
                 className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-sm active:bg-orange-100 transition">✏️</button>
@@ -1983,7 +2002,7 @@ export default function App() {
       {showFeedback && <FeedbackSheet onClose={()=>setShowFeedback(false)} showToast={showToast}/>}
 
       {/* 로그인 모달 */}
-      {loginModal && <LoginModal onSuccess={handleLoginSuccess} onDismiss={handleLoginDismiss}/>}
+      {loginModal && <LoginModal onDismiss={handleLoginDismiss}/>}
     </>
   );
 }
