@@ -1512,6 +1512,14 @@ const FeedbackSheet = ({ onClose, showToast }) => {
         />
         <p className="text-[10px] text-gray-400 text-right mt-1 mb-4">{text.length}/500</p>
 
+        {/* 카카오 채널 바로가기 */}
+        <a href="https://pf.kakao.com/_ARQxfX/friend" target="_blank" rel="noopener noreferrer"
+           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl mb-3"
+           style={{background:"#FEE500", color:"#181600"}}>
+          <span className="text-lg">💬</span>
+          <span className="text-sm font-bold">카카오톡으로 바로 문의하기</span>
+        </a>
+
         <button onClick={submit}
           className="w-full py-4 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition">
           제출하기
@@ -1695,6 +1703,7 @@ const MoreScreen = ({ onBack, onFeedback, onPrivacy, onTerms }) => (
         <p className="text-xs font-bold text-gray-400 px-1 mb-2">고객 지원</p>
         {[
           { icon:"🐛", label:"오류 신고 · 기능 제안", action: onFeedback, badge:"문의하기" },
+          { icon:"💬", label:"카카오톡 채널 상담", action:()=>window.open("https://pf.kakao.com/_ARQxfX/friend","_blank"), badge:"바로가기" },
         ].map(i => (
           <button key={i.label} onClick={i.action}
             className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-[#F7F7F8] active:bg-gray-100 transition mb-2">
