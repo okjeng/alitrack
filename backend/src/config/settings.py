@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     # pydantic List[str] 파싱이 JSONDecodeError를 발생시키는 문제를 방지
     # main.py에서 .split(",")으로 파싱
     # DNS 완료 후: alitrack.kr,www.alitrack.kr,api.alitrack.kr
-    ALLOWED_HOSTS: str = "alitrack-production.up.railway.app,alitrack.pages.dev"
-    ALLOWED_ORIGINS: str = "https://alitrack.pages.dev,https://alitrack-production.up.railway.app"
+    ALLOWED_HOSTS: str = "alitrack-production.up.railway.app,alitrack.pages.dev,localhost"
+    ALLOWED_ORIGINS: str = "https://alitrack.kr,https://alitrack.pages.dev,https://alitrack-production.up.railway.app"
 
     # ── Supabase ──────────────────────────────────────────────────
     SUPABASE_URL: str         = ""
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
 
     # ── 소셜 로그인 ───────────────────────────────────────────────
     # DNS 설정 완료 후: alitrack.kr / api.alitrack.kr 로 변경
-    FRONTEND_URL: str        = "https://alitrack.pages.dev"
+    FRONTEND_URL: str        = "https://alitrack.kr"
 
     KAKAO_CLIENT_ID: str     = ""
     KAKAO_CLIENT_SECRET: str = ""

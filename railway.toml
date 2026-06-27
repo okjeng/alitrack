@@ -7,3 +7,6 @@ healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+
+# Railway auto-deploy 기준 브랜치 — main 브랜치 푸시 시 자동 배포
+# (master → main 머지 후 배포됨)
