@@ -1777,15 +1777,28 @@ export default function App() {
     return () => window.removeEventListener("pwa-installable", handler);
   },[]);
 
-  // 소셜 로그인 후 #tok= 해시 처리 + 인증 상태 확인
+  // 소셜 로그인 후 #tok= 해시 처리 + ?login=fail 처리 + 인증 상태 확인
   useEffect(() => {
+    // ?login=fail 처리 — OAuth 실패 시 에러 토스트
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "fail") {
+      const reason = params.get("reason") || "";
+      const msg = reason === "access_denied"
+        ? "로그인을 취소했습니다."
+        : `로그인에 실패했습니다. (${reason || "알 수 없는 오류"})`;
+      showToast(msg);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
     // 해시에서 JWT 추출 (#tok=<jwt>)
     const hash = window.location.hash;
     if (hash.startsWith("#tok=")) {
       const token = hash.slice(5);
       try { sessionStorage.setItem("ali_token", token); } catch {}
       window.history.replaceState({}, "", window.location.pathname);
+      showToast("로그인 성공! 🎉");
     }
+
     // 저장된 토큰으로 로그인 상태 확인
     const stored = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
     if (!stored) return;
@@ -1795,6 +1808,7 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.logged_in) setUser(data); })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const showToast = useCallback((msg)=>{
