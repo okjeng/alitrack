@@ -114,24 +114,20 @@ async def get_products(
         logger.error(f"프록시 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
 
-    # 전체 응답 구조 로깅
-    logger.info(f"AliExpress full response: {data}")
-
-    # 에러 응답 체크 (error_response 키)
+    # 에러 응답 — Access Token 승인 대기 중일 때는 빈 결과로 정상 응답
     if "error_response" in data:
         err = data["error_response"]
-        logger.error(f"AliExpress error_response: {err}")
-        raise HTTPException(status_code=502, detail=f"AliExpress 오류: {err.get('msg', err)}")
+        logger.warning(f"AliExpress API 오류 (빈 결과 반환): {err.get('code')} - {err.get('msg')}")
+        return {"products": [], "page": page, "size": size, "api_pending": True}
 
     # 정상 응답 파싱
     root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
     resp_result = root.get("resp_result", {})
     resp_code = resp_result.get("resp_code", root.get("resp_code", -1))
-    resp_msg  = resp_result.get("resp_msg",  root.get("resp_msg",  "unknown"))
 
     if resp_code not in (0, "0", 200, "200"):
-        logger.error(f"AliExpress resp_code 오류: code={resp_code}, msg={resp_msg}, root={root}")
-        raise HTTPException(status_code=502, detail=f"AliExpress 오류: {resp_msg} (code={resp_code})")
+        logger.warning(f"AliExpress resp_code 오류 (빈 결과 반환): code={resp_code}")
+        return {"products": [], "page": page, "size": size, "api_pending": True}
 
     raw_products = (
         resp_result.get("result", {})
@@ -167,8 +163,12 @@ async def get_product_detail(product_id: str):
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
-        logger.error(f"상품 상세 조회 오류: {e}", exc_info=True)
-        raise HTTPException(status_code=502, detail="상품 정보를 가져올 수 없습니다.")
+        logger.warning(f"상품 상세 조회 오류 (빈 결과 반환): {e}")
+        return _sanitize_product({})
+
+    if "error_response" in data:
+        logger.warning(f"AliExpress 상품 상세 오류: {data['error_response'].get('code')}")
+        return _sanitize_product({})
 
     raw = (
         data.get("aliexpress_affiliate_product_detail_get_response", {})
