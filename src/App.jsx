@@ -1757,21 +1757,17 @@ export default function App() {
   const scrollPositions             = useRef({});
   const mainRef                     = useRef(null);
 
-  // ⑤ 온보딩 — 개발 테스트 중: false 고정
-  // 배포 전에 아래 주석 해제하고 위 줄 삭제
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  // useState(() => {
-  //   try { return !localStorage.getItem("alitrack_onboarded"); }
-  //   catch { return false; }
-  // });
+  // ⑤ 온보딩 — 첫 방문자에게만 표시
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem("alitrack_onboarded"); }
+    catch { return false; }
+  });
 
-  // ③ 쿠키 배너 — 개발 테스트 중: false 고정
-  // 배포 전 아래 주석 해제
-  const [showCookie, setShowCookie] = useState(false);
-  // useState(() => {
-  //   try { return !localStorage.getItem("alitrack_cookie_consent"); }
-  //   catch { return false; }
-  // });
+  // ③ 쿠키 배너 — 동의 미완료 시 표시
+  const [showCookie, setShowCookie] = useState(() => {
+    try { return !localStorage.getItem("alitrack_cookie_consent"); }
+    catch { return false; }
+  });
 
   // ⑥ PWA 설치 배너
   const [showPwaBanner, setShowPwaBanner] = useState(false);
@@ -1801,6 +1797,12 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  const showToast = useCallback((msg)=>{
+    clearTimeout(toastTimer.current);
+    setToast({msg,visible:true});
+    toastTimer.current=setTimeout(()=>setToast(p=>({...p,visible:false})),2200);
+  },[]);
+
   const handleLogout = useCallback(() => {
     try { sessionStorage.removeItem("ali_token"); } catch {}
     setUser(null);
@@ -1809,12 +1811,6 @@ export default function App() {
 
   // ④ 피드백 시트
   const [showFeedback, setShowFeedback] = useState(false);
-
-  const showToast = useCallback((msg)=>{
-    clearTimeout(toastTimer.current);
-    setToast({msg,visible:true});
-    toastTimer.current=setTimeout(()=>setToast(p=>({...p,visible:false})),2200);
-  },[]);
 
   const showLogin = useCallback(()=>setLoginModal(true),[]);
   const handleLoginDismiss = ()=>setLoginModal(null);

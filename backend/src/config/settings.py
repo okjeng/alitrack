@@ -46,19 +46,20 @@ class Settings(BaseSettings):
     RATE_LIMIT_SEARCH_PER_MINUTE: int = 30   # 검색 엔드포인트
 
     # ── 소셜 로그인 ───────────────────────────────────────────────
-    FRONTEND_URL: str        = "https://alitrack.kr"
+    # DNS 설정 완료 후: alitrack.kr / api.alitrack.kr 로 변경
+    FRONTEND_URL: str        = "https://alitrack.pages.dev"
 
     KAKAO_CLIENT_ID: str     = ""
     KAKAO_CLIENT_SECRET: str = ""
-    KAKAO_REDIRECT_URI: str  = "https://api.alitrack.kr/api/auth/kakao/callback"
+    KAKAO_REDIRECT_URI: str  = "https://alitrack-production.up.railway.app/api/auth/kakao/callback"
 
     NAVER_CLIENT_ID: str     = ""
     NAVER_CLIENT_SECRET: str = ""
-    NAVER_REDIRECT_URI: str  = "https://api.alitrack.kr/api/auth/naver/callback"
+    NAVER_REDIRECT_URI: str  = "https://alitrack-production.up.railway.app/api/auth/naver/callback"
 
     GOOGLE_CLIENT_ID: str    = ""
     GOOGLE_CLIENT_SECRET: str= ""
-    GOOGLE_REDIRECT_URI: str = "https://api.alitrack.kr/api/auth/google/callback"
+    GOOGLE_REDIRECT_URI: str = "https://alitrack-production.up.railway.app/api/auth/google/callback"
 
     # ── 이메일 파싱 (Gmail IMAP) ──────────────────────────────────
     GMAIL_ADDRESS: str       = ""
