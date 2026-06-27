@@ -113,6 +113,8 @@ async def get_products(
         raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
 
     # 원본 응답 파싱 및 민감 필드 제거
+    logger.info(f"AliExpress raw response keys: {list(data.keys())}")
+    logger.info(f"AliExpress raw response: {data}")
     raw_products = (
         data.get("aliexpress_affiliate_hotproduct_query_response", {})
             .get("resp_result", {})
