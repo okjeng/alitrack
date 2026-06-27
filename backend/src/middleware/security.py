@@ -28,8 +28,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # 클릭재킹 방지 — iframe 내 로드 금지
         response.headers["X-Frame-Options"] = "DENY"
 
-        # 구형 브라우저 XSS 필터 활성화
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # 구형 IE XSS 필터 비활성화 — 오히려 취약점 유발, CSP로 대체
+        response.headers["X-XSS-Protection"] = "0"
 
         # CSP — 허용된 출처의 스크립트·스타일만 실행
         response.headers["Content-Security-Policy"] = (

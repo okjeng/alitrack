@@ -13,6 +13,7 @@ IP당 Rate Limit 미들웨어 (Redis 기반)
 
 import time
 import logging
+from collections import defaultdict
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -24,16 +25,43 @@ logger = logging.getLogger("alitrack.rate_limit")
 
 # Redis 연결 (싱글톤)
 _redis_client = None
+_redis_available = None  # None=미확인, True=사용가능, False=불가
+
+# Redis 없을 때 인메모리 fallback (단일 인스턴스 환경용)
+_mem_counters: dict[str, list[float]] = defaultdict(list)
 
 async def get_redis():
-    global _redis_client
+    global _redis_client, _redis_available
+    if _redis_available is False:
+        return None
     if _redis_client is None:
-        _redis_client = aioredis.from_url(
-            settings.REDIS_URL,
-            encoding="utf-8",
-            decode_responses=True,
-        )
+        try:
+            _redis_client = aioredis.from_url(
+                settings.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True,
+                socket_connect_timeout=2,
+            )
+            await _redis_client.ping()
+            _redis_available = True
+            logger.info("Redis 연결 성공")
+        except Exception as e:
+            _redis_available = False
+            _redis_client = None
+            logger.warning(f"Redis 연결 실패, 인메모리 Rate Limit으로 전환: {e}")
+            return None
     return _redis_client
+
+
+def _mem_rate_check(key: str, max_req: int, window: int) -> int:
+    """인메모리 슬라이딩 윈도우 카운터. 현재 요청 수 반환."""
+    now = time.time()
+    cutoff = now - window
+    timestamps = _mem_counters[key]
+    # 윈도우 밖 항목 제거
+    _mem_counters[key] = [t for t in timestamps if t > cutoff]
+    _mem_counters[key].append(now)
+    return len(_mem_counters[key])
 
 
 def _get_limit_for_path(path: str) -> tuple[int, int]:
@@ -46,19 +74,26 @@ def _get_limit_for_path(path: str) -> tuple[int, int]:
 
 
 def _get_client_ip(request: Request) -> str:
-    """실제 클라이언트 IP 추출 (프록시 헤더 고려)"""
-    # Vercel / Cloudflare 등 프록시 환경
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        # 첫 번째 IP가 실제 클라이언트 IP
-        ip = forwarded_for.split(",")[0].strip()
-        # 신뢰할 수 없는 IP 형식이면 직접 연결 IP 사용
-        if _is_valid_ip(ip):
-            return ip
-    cf_ip = request.headers.get("CF-Connecting-IP")  # Cloudflare
-    if cf_ip and _is_valid_ip(cf_ip):
-        return cf_ip
-    return request.client.host if request.client else "unknown"
+    """실제 클라이언트 IP 추출 — Railway/Cloudflare 프록시 신뢰 체인 적용"""
+    direct_ip = request.client.host if request.client else "unknown"
+
+    # Railway는 내부 로드밸런서 IP에서만 X-Forwarded-For를 추가함
+    # 직접 연결 IP가 Railway 내부 대역(10.x.x.x)인 경우에만 헤더 신뢰
+    is_trusted_proxy = direct_ip.startswith("10.") or direct_ip.startswith("172.") or direct_ip == "127.0.0.1"
+
+    if is_trusted_proxy:
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        if forwarded_for:
+            # 마지막 신뢰 프록시 바로 앞 IP (rightmost rule)
+            ips = [ip.strip() for ip in forwarded_for.split(",")]
+            for ip in reversed(ips):
+                if _is_valid_ip(ip) and not ip.startswith(("10.", "172.", "127.")):
+                    return ip
+        cf_ip = request.headers.get("CF-Connecting-IP")
+        if cf_ip and _is_valid_ip(cf_ip):
+            return cf_ip
+
+    return direct_ip
 
 
 def _is_valid_ip(ip: str) -> bool:
@@ -86,15 +121,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             redis = await get_redis()
-            pipe  = redis.pipeline()
-            await pipe.incr(redis_key)
-            await pipe.expire(redis_key, window)
-            results = await pipe.execute()
-            current_count = results[0]
+            if redis:
+                pipe  = redis.pipeline()
+                await pipe.incr(redis_key)
+                await pipe.expire(redis_key, window)
+                results = await pipe.execute()
+                current_count = results[0]
+            else:
+                # Redis 미사용 시 인메모리 카운터 (Fail-Secure)
+                current_count = _mem_rate_check(redis_key, max_req, window)
         except Exception as e:
-            # Redis 장애 시 서비스 중단 방지 — 요청 통과시킴 (Fail-Open)
-            logger.warning(f"Redis rate limit 오류 (Fail-Open): {e}")
-            return await call_next(request)
+            logger.warning(f"Redis rate limit 오류, 인메모리로 전환: {e}")
+            current_count = _mem_rate_check(redis_key, max_req, window)
 
         remaining = max(0, max_req - current_count)
 

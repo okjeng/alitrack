@@ -42,14 +42,25 @@ SQL_PATTERNS = [
     r"\bxp_cmdshell\b",
 ]
 
-# 악성 매크로/봇 User-Agent 패턴
+# 악성 스캐너/봇 User-Agent 패턴
 MALICIOUS_UA_PATTERNS = [
     r"sqlmap",
     r"nikto",
     r"nmap",
     r"masscan",
     r"zgrab",
-    r"python-requests.*bot",
+    r"python-requests/\d",   # python-requests/2.x.x 직접 호출 차단
+    r"go-http-client",
+    r"curl/\d",              # curl 직접 호출 차단 (브라우저 아님)
+    r"wget/",
+    r"dirbuster",
+    r"gobuster",
+    r"nuclei",
+    r"hydra",
+    r"wfuzz",
+    r"burpsuite",
+    r"acunetix",
+    r"nessus",
 ]
 
 _XSS_REGEX = [re.compile(p, re.IGNORECASE) for p in XSS_PATTERNS]
