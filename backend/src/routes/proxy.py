@@ -112,15 +112,22 @@ async def get_products(
         logger.error(f"프록시 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
 
-    # 원본 응답 파싱 및 민감 필드 제거
-    logger.info(f"AliExpress raw response keys: {list(data.keys())}")
-    logger.info(f"AliExpress raw response: {data}")
+    # 원본 응답 파싱 — 에러 코드 확인
+    root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
+    logger.info(f"AliExpress response: {root}")
+
+    resp_result = root.get("resp_result", {})
+    resp_code = resp_result.get("resp_code", root.get("resp_code", -1))
+    resp_msg  = resp_result.get("resp_msg",  root.get("resp_msg",  "unknown"))
+
+    if resp_code not in (0, "0", 200, "200"):
+        logger.error(f"AliExpress API 오류: code={resp_code}, msg={resp_msg}")
+        raise HTTPException(status_code=502, detail=f"AliExpress 오류: {resp_msg} (code={resp_code})")
+
     raw_products = (
-        data.get("aliexpress_affiliate_hotproduct_query_response", {})
-            .get("resp_result", {})
-            .get("result", {})
-            .get("products", {})
-            .get("product", [])
+        resp_result.get("result", {})
+                   .get("products", {})
+                   .get("product", [])
     )
     products = [_sanitize_product(p) for p in raw_products]
 
