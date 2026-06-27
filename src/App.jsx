@@ -257,10 +257,10 @@ const LoadingSpinner = () => (
 const LegalFooter = () => (
   <div className="bg-[#F9F9F9] rounded-2xl px-4 py-5 space-y-2.5 mt-6">
     {[
-      "본 서비스에서 제공하는 가격 분석 및 최저가 정보는 최근 60일간 수집된 데이터를 기반으로 산출된 독립적인 분석 결과입니다.",
-      "알리익스프레스 시스템 특성상 가격이 실시간으로 변동되므로, 최종 구매 전 쇼핑몰 앱에서 결제 금액을 반드시 재확인하시기 바랍니다.",
-      "AliTrack은 알리익스프레스 공식 제휴 채널로서, 유저가 링크를 통해 상품을 구매할 경우 제휴 프로그램에 따라 서비스 유지 관리를 위한 소정의 수수료를 지급받을 수 있습니다.",
-      "발생한 제휴 수익은 무분별한 배너 광고를 배제하고, 더 정밀한 무료 실시간 가격 추적 시스템 서버를 안정적으로 운영 및 고도화하는 데 전액 투명하게 재투자됩니다.",
+      "본 서비스의 가격 분석 및 최저가 정보는 수집된 데이터를 기반으로 한 독립적인 분석 결과이며, 실제 판매 가격과 다를 수 있습니다.",
+      "상품 가격은 실시간으로 변동될 수 있으므로, 최종 구매 전 해당 쇼핑몰에서 결제 금액을 반드시 재확인하시기 바랍니다.",
+      "본 서비스는 제휴 마케팅 프로그램에 참여하고 있으며, 링크를 통한 구매 시 소정의 수수료를 받을 수 있습니다.",
+      "발생한 수익은 광고 없는 무료 가격 추적 서비스의 안정적인 운영 및 고도화에 전액 재투자됩니다.",
     ].map((t,i) => <p key={i} style={{fontSize:11,color:"#8E8E93",lineHeight:1.65}}>· {t}</p>)}
     <div className="pt-2 border-t border-gray-200 flex justify-between">
       <p style={{fontSize:10,color:"#C7C7CC"}}>© 2026 AliTrack. All rights reserved.</p>
@@ -308,9 +308,9 @@ const ProductCard = ({ product:p, onProduct }) => {
         <div className="flex items-center gap-1.5">
           <p className="text-base font-extrabold text-gray-900">{fmt(p.price)}</p>
           {p.discount > 0
-            ? <span className="text-[11px] font-bold text-red-500">▼ {p.discount}%</span>
+            ? <span className="text-[11px] font-bold text-blue-500">▼ {p.discount}%</span>
             : p.discount < 0
-            ? <span className="text-[11px] font-bold text-green-500">▲ {Math.abs(p.discount)}%</span>
+            ? <span className="text-[11px] font-bold text-red-500">▲ {Math.abs(p.discount)}%</span>
             : null}
         </div>
         {diff > 0
@@ -1267,9 +1267,9 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
               <div className="flex items-center gap-2">
                 <p className="text-2xl font-extrabold text-gray-900">{fmt(product.price)}</p>
                 {product.discount > 0
-                  ? <span className="text-base font-bold text-red-500">▼ {product.discount}%</span>
+                  ? <span className="text-base font-bold text-blue-500">▼ {product.discount}%</span>
                   : product.discount < 0
-                  ? <span className="text-base font-bold text-green-500">▲ {Math.abs(product.discount)}%</span>
+                  ? <span className="text-base font-bold text-red-500">▲ {Math.abs(product.discount)}%</span>
                   : null}
               </div>
               <p className="text-sm text-gray-400 line-through">{fmt(product.orig)}</p>
