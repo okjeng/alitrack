@@ -54,13 +54,14 @@ app = FastAPI(
 # ─── 미들웨어 등록 (순서 중요: 바깥→안쪽 순) ─────────────────────
 
 # 1. 신뢰할 호스트만 허용 (Host 헤더 스푸핑 방지)
+_hosts = [h.strip() for h in settings.ALLOWED_HOSTS.split(",") if h.strip()]
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=settings.ALLOWED_HOSTS,
+    allowed_hosts=_hosts,
 )
 
 # 2. CORS — 허용된 출처만
-_origins = settings.ALLOWED_ORIGINS
+_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 _credentials = "*" not in _origins
 app.add_middleware(
     CORSMiddleware,

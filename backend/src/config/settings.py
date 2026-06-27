@@ -5,32 +5,8 @@ src/config/settings.py
 """
 
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
-from typing import List, Any
+from typing import List
 from functools import lru_cache
-import json
-
-
-def _parse_str_list(v: Any) -> Any:
-    """
-    환경변수 List[str] 파싱 — 아래 형식 모두 허용:
-      *          → ["*"]
-      a,b,c      → ["a","b","c"]
-      [*]        → ["*"]        (Railway CLI 따옴표 누락 처리)
-      ["a","b"]  → ["a","b"]   (올바른 JSON 배열)
-    """
-    if not isinstance(v, str):
-        return v
-    v = v.strip()
-    if v.startswith("[") and v.endswith("]"):
-        try:
-            return json.loads(v)
-        except json.JSONDecodeError:
-            # [*] 처럼 따옴표 없는 경우 → 내부 값을 쉼표로 분리
-            inner = v[1:-1]
-            return [x.strip().strip('"').strip("'") for x in inner.split(",") if x.strip()]
-    # 쉼표 구분 문자열
-    return [x.strip() for x in v.split(",") if x.strip()]
 
 
 class Settings(BaseSettings):
@@ -39,13 +15,11 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── 보안: 허용 호스트 / 출처 ──────────────────────────────────
-    ALLOWED_HOSTS: List[str] = ["*"]
-    ALLOWED_ORIGINS: List[str] = ["*"]
-
-    @field_validator("ALLOWED_HOSTS", "ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_list(cls, v: Any) -> Any:
-        return _parse_str_list(v)
+    # str로 유지 — Railway CLI가 JSON 배열 저장 시 따옴표를 누락시켜
+    # pydantic List[str] 파싱이 JSONDecodeError를 발생시키는 문제를 방지
+    # main.py에서 .split(",")으로 파싱
+    ALLOWED_HOSTS: str = "*"
+    ALLOWED_ORIGINS: str = "*"
 
     # ── Supabase ──────────────────────────────────────────────────
     SUPABASE_URL: str         = ""
