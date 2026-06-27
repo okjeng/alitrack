@@ -305,8 +305,14 @@ const ProductCard = ({ product:p, onProduct }) => {
            style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
           {p.name}
         </p>
-        <p className="text-sm font-extrabold text-gray-900">{fmt(p.price)}</p>
-        <p className="text-[10px] font-bold text-red-500">-{p.discount}%</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-base font-extrabold text-gray-900">{fmt(p.price)}</p>
+          {p.discount > 0
+            ? <span className="text-[11px] font-bold text-red-500">▼ {p.discount}%</span>
+            : p.discount < 0
+            ? <span className="text-[11px] font-bold text-green-500">▲ {Math.abs(p.discount)}%</span>
+            : null}
+        </div>
         {diff > 0
           ? <p className="text-[10px] text-orange-500 font-semibold leading-tight">평균 대비 {fmt(Math.round(diff/100)*100)} 저렴!</p>
           : <p className="text-[10px] text-blue-500 font-semibold">현재 최저가 근접 중</p>
@@ -1257,10 +1263,16 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
               {product.tag}
             </span>
             <p className="text-lg font-extrabold text-gray-900 mt-2 leading-snug">{product.name}</p>
-            <div className="flex items-baseline gap-2 mt-2">
-              <p className="text-2xl font-extrabold text-gray-900">{fmt(product.price)}</p>
+            <div className="mt-2 space-y-0.5">
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-extrabold text-gray-900">{fmt(product.price)}</p>
+                {product.discount > 0
+                  ? <span className="text-base font-bold text-red-500">▼ {product.discount}%</span>
+                  : product.discount < 0
+                  ? <span className="text-base font-bold text-green-500">▲ {Math.abs(product.discount)}%</span>
+                  : null}
+              </div>
               <p className="text-sm text-gray-400 line-through">{fmt(product.orig)}</p>
-              <p className="text-sm font-bold text-red-500">-{product.discount}%</p>
             </div>
             <p className="text-xs text-[#00C07F] font-bold mt-1">🚀 {product.deliveryDays}일 내 배송 · 무료배송</p>
             <p className="text-xs text-gray-400 mt-0.5">⭐ {product.rating} 평점 ({product.reviews.toLocaleString()}개 리뷰)</p>
