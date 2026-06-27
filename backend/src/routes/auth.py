@@ -24,6 +24,18 @@ from src.utils.supabase_client import sb_upsert, sb_select
 logger = logging.getLogger("alitrack.auth")
 router = APIRouter()
 
+
+def _mask_err(e: Exception) -> str:
+    """예외 메시지에서 URL/토큰/키 노출 없이 타입+요약만 반환"""
+    msg = str(e)
+    # httpx 요청 예외는 URL에 코드/토큰이 포함될 수 있음 — 타입만 기록
+    if "httpx" in type(e).__module__:
+        return f"{type(e).__name__} (외부 API 통신 오류)"
+    # 토큰/코드 패턴 마스킹
+    import re
+    msg = re.sub(r"(code|token|secret|key|password)=[A-Za-z0-9+/_.%-]{4,}", r"\1=***", msg, flags=re.I)
+    return f"{type(e).__name__}: {msg[:120]}"
+
 # 쿠키 보안 설정
 _COOKIE_BASE = dict(httponly=True, secure=True, samesite="lax")
 
@@ -140,7 +152,7 @@ async def kakao_callback(
                                   headers={"Authorization": f"Bearer {kakao_token}"})
             ud = ur.json()
     except Exception as e:
-        logger.error(f"카카오 로그인 오류: {e}")
+        logger.error(f"카카오 로그인 오류: {_mask_err(e)}")
         raise HTTPException(status_code=502, detail="카카오 로그인에 실패했습니다.")
 
     provider_id = str(ud.get("id", ""))
@@ -196,7 +208,7 @@ async def naver_callback(
                                   headers={"Authorization": f"Bearer {naver_token}"})
             ud = ur.json().get("response", {})
     except Exception as e:
-        logger.error(f"네이버 로그인 오류: {e}")
+        logger.error(f"네이버 로그인 오류: {_mask_err(e)}")
         raise HTTPException(status_code=502, detail="네이버 로그인에 실패했습니다.")
 
     provider_id = ud.get("id", "")
@@ -251,7 +263,7 @@ async def google_callback(
                                   headers={"Authorization": f"Bearer {google_token}"})
             ud = ur.json()
     except Exception as e:
-        logger.error(f"구글 로그인 오류: {e}")
+        logger.error(f"구글 로그인 오류: {_mask_err(e)}")
         raise HTTPException(status_code=502, detail="구글 로그인에 실패했습니다.")
 
     provider_id = ud.get("id", "")

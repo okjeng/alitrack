@@ -40,7 +40,7 @@ const PRODUCT_TEMPLATES = [
 
 const PAGE_SIZE = 10; // 한 번에 로드할 상품 수
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://alitrack-production.up.railway.app";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 // ── 핵심: 더미 페이지 생성 함수 ──────────────────────────────────
 // API 연동 시 이 함수만 fetch('/api/products?page='+page) 로 교체

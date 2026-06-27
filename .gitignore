@@ -1,18 +1,27 @@
 # Claude Code local settings
 .claude/
 
-# Environment files (NEVER commit these)
+# ─── 환경변수 파일 — 절대 커밋 금지 ──────────────────────────────
 .env
-.env.local
-.env.production
+.env.*
+!.env.example            # 예시 템플릿만 허용
 backend/.env
+backend/.env.*
+!backend/.env.template   # 예시 템플릿만 허용
+src/files/.env.template  # 구 버전 임시 파일
+
+# 구 버전 임시 파일 (AI 생성 산출물 등)
+src/files/
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 backend/.venv/
 backend/venv/
+backend/__pycache__/
+**/__pycache__/
 
 # Logs
 logs

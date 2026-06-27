@@ -67,14 +67,20 @@ app.add_middleware(
     allowed_hosts=_hosts,
 )
 
-# 2. CORS — 허용된 출처만
+# 2. CORS — 허용된 출처 화이트리스트
 _origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
-_credentials = "*" not in _origins
+# 로컬 개발 환경 자동 허용 (127.0.0.1 / localhost)
+_dev_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+if settings.ENV != "production":
+    _origins = list(set(_origins) | set(_dev_origins))
+# 프로덕션에서 * 허용 시 경고 — 운영 중 절대 사용 금지
+if "*" in _origins and settings.ENV == "production":
+    logger.error("⚠️  ALLOWED_ORIGINS=* 는 프로덕션에서 허용되지 않습니다. 서비스를 중단합니다.")
+    raise RuntimeError("ALLOWED_ORIGINS=* in production is forbidden.")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
-    allow_origin_regex=r".*" if "*" in _origins else None,
-    allow_credentials=_credentials,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     expose_headers=["X-RateLimit-Remaining"],

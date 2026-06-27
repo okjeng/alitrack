@@ -18,8 +18,9 @@ class Settings(BaseSettings):
     # str로 유지 — Railway CLI가 JSON 배열 저장 시 따옴표를 누락시켜
     # pydantic List[str] 파싱이 JSONDecodeError를 발생시키는 문제를 방지
     # main.py에서 .split(",")으로 파싱
-    ALLOWED_HOSTS: str = "*"
-    ALLOWED_ORIGINS: str = "*"
+    # DNS 완료 후: alitrack.kr,www.alitrack.kr,api.alitrack.kr
+    ALLOWED_HOSTS: str = "alitrack-production.up.railway.app,alitrack.pages.dev"
+    ALLOWED_ORIGINS: str = "https://alitrack.pages.dev,https://alitrack-production.up.railway.app"
 
     # ── Supabase ──────────────────────────────────────────────────
     SUPABASE_URL: str         = ""
