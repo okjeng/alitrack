@@ -15,23 +15,23 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── 보안: 허용 호스트 / 출처 ──────────────────────────────────
-    # .env 예시: ALLOWED_HOSTS=alitrack.kr,www.alitrack.kr
-    ALLOWED_HOSTS: List[str] = ["alitrack.kr", "www.alitrack.kr", "localhost"]
-    ALLOWED_ORIGINS: List[str] = ["https://alitrack.kr", "https://www.alitrack.kr"]
+    # Railway 배포 시 *.railway.app 도메인 자동 허용
+    # 커스텀 도메인 연결 후: ALLOWED_HOSTS=alitrack.kr,www.alitrack.kr
+    ALLOWED_HOSTS: List[str] = ["*"]
+    ALLOWED_ORIGINS: List[str] = ["*"]
 
     # ── 알리익스프레스 제휴 API ───────────────────────────────────
-    # ⚠️ 절대 소스코드에 직접 쓰지 마세요 — .env 에만 저장
-    ALI_APP_KEY: str         # .env: ALI_APP_KEY=xxxxxxxx
-    ALI_APP_SECRET: str      # .env: ALI_APP_SECRET=xxxxxxxxxxxxxxxx
-    ALI_TRACKING_ID: str     # .env: ALI_TRACKING_ID=your_tracking_id
+    # https://portals.aliexpress.com 에서 발급
+    ALI_APP_KEY: str      = ""
+    ALI_APP_SECRET: str   = ""
+    ALI_TRACKING_ID: str  = ""
 
     # ── 데이터베이스 ──────────────────────────────────────────────
-    # .env 예시: DATABASE_URL=postgresql://user:pass@host:5432/alitrack
-    DATABASE_URL: str
+    # Railway PostgreSQL 플러그인 추가 시 자동 주입됨
+    DATABASE_URL: str     = ""
 
     # ── JWT 인증 ──────────────────────────────────────────────────
-    # 최소 32자 랜덤 문자열 권장: openssl rand -hex 32
-    JWT_SECRET: str
+    JWT_SECRET: str       = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7일
 

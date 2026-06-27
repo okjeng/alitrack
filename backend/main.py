@@ -56,11 +56,14 @@ app.add_middleware(
 )
 
 # 2. CORS — 허용된 출처만
+_origins = settings.ALLOWED_ORIGINS
+_credentials = "*" not in _origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],      # 필요한 메서드만
+    allow_origins=_origins,
+    allow_origin_regex=r".*" if "*" in _origins else None,
+    allow_credentials=_credentials,
+    allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     expose_headers=["X-RateLimit-Remaining"],
     max_age=600,
