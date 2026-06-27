@@ -7,6 +7,10 @@ Production-ready Security 적용 완료
   uvicorn main:app --host 0.0.0.0 --port 8000
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
