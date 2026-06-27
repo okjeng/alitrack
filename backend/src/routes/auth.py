@@ -60,8 +60,9 @@ async def _upsert_user(provider: str, provider_id: str, email: str,
 
 
 def _success_redirect(response: Response, user_id: str, email: str) -> RedirectResponse:
-    resp = RedirectResponse(url=f"{settings.FRONTEND_URL}?login=ok")
-    _set_auth_cookies(resp, user_id, email)
+    # JWT를 해시 프래그먼트로 전달 — URL 로그에 남지 않고 서버로 전송되지 않음
+    at = create_access_token(user_id, email)
+    resp = RedirectResponse(url=f"{settings.FRONTEND_URL}#tok={at}")
     resp.delete_cookie("oauth_state")
     return resp
 

@@ -1781,21 +1781,30 @@ export default function App() {
     return () => window.removeEventListener("pwa-installable", handler);
   },[]);
 
-  // 소셜 로그인 후 ?login=ok 처리 + 인증 상태 확인
+  // 소셜 로그인 후 #tok= 해시 처리 + 인증 상태 확인
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("login") === "ok") {
+    // 해시에서 JWT 추출 (#tok=<jwt>)
+    const hash = window.location.hash;
+    if (hash.startsWith("#tok=")) {
+      const token = hash.slice(5);
+      try { sessionStorage.setItem("ali_token", token); } catch {}
       window.history.replaceState({}, "", window.location.pathname);
     }
-    fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
+    // 저장된 토큰으로 로그인 상태 확인
+    const stored = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
+    if (!stored) return;
+    fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${stored}` },
+    })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.logged_in) setUser(data); })
       .catch(() => {});
   }, []);
 
   const handleLogout = useCallback(() => {
-    fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" })
-      .finally(() => { setUser(null); showToast("로그아웃되었습니다."); });
+    try { sessionStorage.removeItem("ali_token"); } catch {}
+    setUser(null);
+    showToast("로그아웃되었습니다.");
   }, [showToast]);
 
   // ④ 피드백 시트
