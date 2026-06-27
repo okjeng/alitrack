@@ -27,15 +27,21 @@ router = APIRouter()
 ALI_API_BASE = "https://api-sg.aliexpress.com/sync"
 
 
-def _build_ali_signature(params: dict, secret: str) -> str:
+def _build_ali_signature(method: str, params: dict, secret: str) -> str:
     """
-    알리 Portals API 서명 생성 (sign_method=sha256)
-    SHA256(secret + sorted_k1v1k2v2... + secret)  — plain SHA256, HMAC 아님
+    알리 공식 SDK 방식: HMAC-SHA256(key=secret, msg=method+sorted_params)
+    method는 서명 문자열 앞에 prefix로 붙임 (params dict에서는 제외)
     """
-    sorted_params = sorted(params.items())
+    # method 제외한 나머지 파라미터만 정렬
+    sign_params = {k: v for k, v in params.items() if k != "method"}
+    sorted_params = sorted(sign_params.items())
     params_str = "".join(f"{k}{v}" for k, v in sorted_params)
-    sign_string = secret + params_str + secret
-    return hashlib.sha256(sign_string.encode("utf-8")).hexdigest().upper()
+    sign_string = method + params_str  # method가 prefix
+    return hmac.new(
+        secret.encode("utf-8"),
+        sign_string.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest().upper()
 
 
 def _build_common_params(method: str, extra: dict) -> dict:
@@ -49,7 +55,7 @@ def _build_common_params(method: str, extra: dict) -> dict:
         "v":          "2.0",
         **extra,
     }
-    params["sign"] = _build_ali_signature(params, settings.ALI_APP_SECRET)
+    params["sign"] = _build_ali_signature(method, params, settings.ALI_APP_SECRET)
     return params
 
 
