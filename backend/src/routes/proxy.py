@@ -112,16 +112,23 @@ async def get_products(
         logger.error(f"프록시 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
 
-    # 원본 응답 파싱 — 에러 코드 확인
-    root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
-    logger.info(f"AliExpress response: {root}")
+    # 전체 응답 구조 로깅
+    logger.info(f"AliExpress full response: {data}")
 
+    # 에러 응답 체크 (error_response 키)
+    if "error_response" in data:
+        err = data["error_response"]
+        logger.error(f"AliExpress error_response: {err}")
+        raise HTTPException(status_code=502, detail=f"AliExpress 오류: {err.get('msg', err)}")
+
+    # 정상 응답 파싱
+    root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
     resp_result = root.get("resp_result", {})
     resp_code = resp_result.get("resp_code", root.get("resp_code", -1))
     resp_msg  = resp_result.get("resp_msg",  root.get("resp_msg",  "unknown"))
 
     if resp_code not in (0, "0", 200, "200"):
-        logger.error(f"AliExpress API 오류: code={resp_code}, msg={resp_msg}")
+        logger.error(f"AliExpress resp_code 오류: code={resp_code}, msg={resp_msg}, root={root}")
         raise HTTPException(status_code=502, detail=f"AliExpress 오류: {resp_msg} (code={resp_code})")
 
     raw_products = (
