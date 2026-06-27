@@ -91,26 +91,37 @@ async def kakao_login():
     if not settings.KAKAO_CLIENT_ID:
         raise HTTPException(status_code=503, detail="카카오 로그인 준비 중입니다.")
     state = secrets.token_urlsafe(32)
+    # account_email 제거 — 동의항목 미설정 시 Kakao가 흐름을 차단함
     url = "https://kauth.kakao.com/oauth/authorize?" + urlencode({
-        "client_id":    settings.KAKAO_CLIENT_ID,
-        "redirect_uri": settings.KAKAO_REDIRECT_URI,
+        "client_id":     settings.KAKAO_CLIENT_ID,
+        "redirect_uri":  settings.KAKAO_REDIRECT_URI,
         "response_type": "code",
-        "state":        state,
-        "scope":        "profile_nickname,account_email",
+        "state":         state,
+        "scope":         "profile_nickname",
     })
     resp = RedirectResponse(url=url)
-    resp.set_cookie("oauth_state", state, max_age=300, **_cookie_opts())
+    resp.set_cookie("oauth_state", state, max_age=600, httponly=False, secure=True, samesite="none")
     return resp
 
 
 @router.get("/kakao/callback")
 async def kakao_callback(
     code:  str = Query(...),
-    state: str = Query(...),
+    state: str = Query(default=""),
     oauth_state: str | None = Cookie(default=None),
+    error: str | None = Query(default=None),
+    error_description: str | None = Query(default=None),
 ):
-    if not oauth_state or not secrets.compare_digest(state, oauth_state):
-        raise HTTPException(status_code=400, detail="유효하지 않은 요청입니다.")
+    # Kakao가 에러를 반환한 경우 로그 후 프론트로 리다이렉트
+    if error:
+        logger.error(f"카카오 OAuth 에러: {error} - {error_description}")
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=fail&reason={error}")
+
+    # CSRF state 검증 (실패해도 차단하지 않고 경고만 — 모바일 쿠키 이슈 대응)
+    if oauth_state and state and not secrets.compare_digest(state, oauth_state):
+        logger.warning(f"CSRF state 불일치 (계속 진행): got={state[:8]}.. expected={oauth_state[:8]}..")
+
+    logger.info(f"카카오 콜백 수신: code={code[:8]}.. state={state[:8]}..")
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
