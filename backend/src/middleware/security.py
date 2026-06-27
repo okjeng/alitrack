@@ -60,8 +60,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
             response.headers["Pragma"] = "no-cache"
 
-        # 서버 정보 숨김 (기본적으로 "uvicorn" 등이 노출될 수 있음)
-        response.headers.pop("Server", None)
-        response.headers.pop("X-Powered-By", None)
+        # 서버 정보 숨김 (MutableHeaders에는 pop이 없어서 del 사용)
+        for header in ("server", "x-powered-by"):
+            if header in response.headers:
+                del response.headers[header]
 
         return response
