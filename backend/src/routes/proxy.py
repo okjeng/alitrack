@@ -45,6 +45,8 @@ def _build_common_params(method: str, extra: dict) -> dict:
         "method":     method,
         "timestamp":  str(int(time.time() * 1000)),
         "sign_method":"sha256",
+        "format":     "json",
+        "v":          "2.0",
         **extra,
     }
     params["sign"] = _build_ali_signature(params, settings.ALI_APP_SECRET)
