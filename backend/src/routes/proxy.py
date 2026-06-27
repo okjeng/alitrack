@@ -100,7 +100,7 @@ async def get_products(
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(ALI_API_BASE, params=params)
+            resp = await client.post(ALI_API_BASE, data=params)
             resp.raise_for_status()
             data = resp.json()
     except httpx.TimeoutException:
@@ -161,7 +161,7 @@ async def get_product_detail(product_id: str):
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(ALI_API_BASE, params=params)
+            resp = await client.post(ALI_API_BASE, data=params)
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
@@ -197,7 +197,7 @@ async def get_affiliate_link(product_id: str):
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(ALI_API_BASE, params=params)
+            resp = await client.post(ALI_API_BASE, data=params)
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
