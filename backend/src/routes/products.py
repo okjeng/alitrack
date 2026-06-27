@@ -1,12 +1,13 @@
 """
 src/routes/products.py
-상품 가격 히스토리 / 찜 목록 DB 라우터 (Supabase 연동)
+상품 가격 히스토리 / 찜 목록 라우터 (Supabase REST API 연동)
 """
 
 import logging
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Query, Depends, HTTPException
 from src.utils.auth import verify_token_optional, require_auth
-from src.utils.supabase_client import supabase_query
+from src.utils.supabase_client import sb_select, sb_upsert, sb_delete
 
 logger = logging.getLogger("alitrack.products")
 router = APIRouter()
@@ -22,41 +23,35 @@ async def get_price_history(
         raise HTTPException(status_code=400, detail="유효하지 않은 상품 ID입니다.")
 
     try:
-        from datetime import datetime, timedelta, timezone
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-
-        result = await supabase_query(
-            lambda sb: sb.table("price_history")
-              .select("price, recorded_at")
-              .eq("product_id", product_id)
-              .gte("recorded_at", since)
-              .order("recorded_at")
-              .execute()
+        data = await sb_select(
+            "price_history",
+            filters={"product_id": f"eq.{product_id}", "recorded_at": f"gte.{since}"},
+            order="recorded_at.asc",
+            columns="price,recorded_at",
         )
-        return {"product_id": product_id, "days": days, "history": result.data}
+        return {"product_id": product_id, "days": days, "history": data}
     except RuntimeError:
-        # Supabase 미설정 시 빈 결과
         return {"product_id": product_id, "days": days, "history": []}
     except Exception as e:
-        logger.error(f"price_history 조회 오류: {e}")
+        logger.warning(f"price_history 조회 오류: {e}")
         return {"product_id": product_id, "days": days, "history": []}
 
 
 @router.get("/wishlist")
 async def get_wishlist(user = Depends(require_auth)):
     try:
-        result = await supabase_query(
-            lambda sb: sb.table("wishlist")
-              .select("product_id, product_snapshot, created_at")
-              .eq("user_id", str(user["user_id"]))
-              .order("created_at", desc=True)
-              .execute()
+        data = await sb_select(
+            "wishlist",
+            filters={"user_id": f"eq.{user['user_id']}"},
+            order="created_at.desc",
+            columns="product_id,product_snapshot,created_at",
         )
-        return {"items": result.data}
+        return {"items": data}
     except RuntimeError:
         return {"items": []}
     except Exception as e:
-        logger.error(f"wishlist 조회 오류: {e}")
+        logger.warning(f"wishlist 조회 오류: {e}")
         return {"items": []}
 
 
@@ -65,11 +60,7 @@ async def add_to_wishlist(product_id: str, user = Depends(require_auth)):
     if not product_id.isdigit():
         raise HTTPException(status_code=400, detail="유효하지 않은 상품 ID입니다.")
     try:
-        await supabase_query(
-            lambda sb: sb.table("wishlist")
-              .upsert({"user_id": str(user["user_id"]), "product_id": product_id})
-              .execute()
-        )
+        await sb_upsert("wishlist", {"user_id": str(user["user_id"]), "product_id": product_id})
         return {"ok": True}
     except Exception as e:
         logger.error(f"wishlist 추가 오류: {e}")
@@ -79,13 +70,7 @@ async def add_to_wishlist(product_id: str, user = Depends(require_auth)):
 @router.delete("/wishlist/{product_id}")
 async def remove_from_wishlist(product_id: str, user = Depends(require_auth)):
     try:
-        await supabase_query(
-            lambda sb: sb.table("wishlist")
-              .delete()
-              .eq("user_id", str(user["user_id"]))
-              .eq("product_id", product_id)
-              .execute()
-        )
+        await sb_delete("wishlist", {"user_id": f"eq.{user['user_id']}", "product_id": f"eq.{product_id}"})
         return {"ok": True}
     except Exception as e:
         logger.error(f"wishlist 삭제 오류: {e}")
