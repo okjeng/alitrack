@@ -29,15 +29,17 @@ ALI_API_BASE = "https://api-sg.aliexpress.com/sync"
 
 def _build_ali_signature(params: dict, secret: str) -> str:
     """
-    알리 Portals API 서명 - sign/sign_method 제외, MD5, timestamp=초단위
-    MD5(secret + sorted_k1v1k2v2... + secret)
+    알리 Portals API 서명 - HMAC-MD5 방식 (sign_method=hmac)
+    HMAC-MD5(key=secret, msg=sorted_k1v1k2v2...)  wrapping 없음
     """
-    # sign과 sign_method는 서명 계산에서 제외
     excluded = {"sign", "sign_method"}
     sorted_params = sorted((k, v) for k, v in params.items() if k not in excluded)
     params_str = "".join(f"{k}{v}" for k, v in sorted_params)
-    sign_string = secret + params_str + secret
-    return hashlib.md5(sign_string.encode("utf-8")).hexdigest().upper()
+    return hmac.new(
+        secret.encode("utf-8"),
+        params_str.encode("utf-8"),
+        hashlib.md5,
+    ).hexdigest().upper()
 
 
 def _build_common_params(method: str, extra: dict) -> dict:
@@ -45,8 +47,8 @@ def _build_common_params(method: str, extra: dict) -> dict:
     params = {
         "app_key":    settings.ALI_APP_KEY,    # ← .env에서만
         "method":     method,
-        "timestamp":  str(int(time.time())),   # 초단위 (밀리초 아님)
-        "sign_method":"md5",
+        "timestamp":  str(int(time.time())),
+        "sign_method":"hmac",
         "format":     "json",
         "v":          "2.0",
         **extra,
