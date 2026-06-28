@@ -387,97 +387,35 @@ const BottomNav = ({ active, onNav }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// 모달: 로그인 (카카오 회원 / 이메일 일반 회원)
+// 모달: 로그인 (카카오 간편가입)
 // ═══════════════════════════════════════════════════════════════════
-const LoginModal = ({ onDismiss, onLoginSuccess }) => {
-  const [view, setView]         = useState("main");   // "main" | "email-login" | "email-signup"
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [err, setErr]           = useState("");
-
+const LoginModal = ({ onDismiss }) => {
   const handleKakao = () => { window.location.href = `${API_BASE}/api/auth/kakao/login`; };
-
-  const handleEmailSubmit = async (isSignup) => {
-    setErr("");
-    if (!email || !password) { setErr("이메일과 비밀번호를 입력해주세요."); return; }
-    if (isSignup && password.length < 8) { setErr("비밀번호는 8자 이상이어야 합니다."); return; }
-    setLoading(true);
-    try {
-      const endpoint = isSignup ? "register" : "login";
-      const res = await fetch(`${API_BASE}/api/auth/email/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErr(data.detail || "오류가 발생했습니다."); return; }
-      try { sessionStorage.setItem("ali_token", data.token); } catch {}
-      onLoginSuccess?.(data);
-      onDismiss();
-    } catch {
-      setErr("네트워크 오류. 다시 시도해주세요.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onDismiss}>
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
-           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)"}}
+           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 32px)"}}
            onClick={e=>e.stopPropagation()}>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
-
-        {view === "main" && (
-          <>
-            <p className="text-xl font-extrabold text-gray-900 text-center">가입하고</p>
-            <p className="text-xl font-extrabold text-orange-500 text-center mb-1">최저가 알림 받기 🔔</p>
-            <div className="mt-4 mb-5 bg-[#FFFBF0] rounded-2xl p-3 text-xs text-gray-600 space-y-1">
-              <div className="flex items-center gap-2"><span className="text-yellow-500 font-bold">💬 카카오 회원</span><span className="ml-auto text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">추천</span></div>
-              <p className="text-[11px] text-gray-500 pl-1">찜·가격알림·카카오톡 동시 알림·카카오 공유</p>
-              <div className="border-t border-yellow-100 mt-2 pt-2 flex items-center gap-2"><span className="text-gray-500 font-bold">📧 일반 회원</span></div>
-              <p className="text-[11px] text-gray-500 pl-1">찜·가격알림 (푸시 알림)</p>
-            </div>
-            <button onClick={handleKakao}
-              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-sm font-bold transition active:scale-95 mb-3"
-              style={{background:"#FEE500", color:"#181600"}}>
-              <span className="text-lg">💬</span>카카오로 1초 가입 (추천)
-            </button>
-            <button onClick={()=>{setView("email-login");setErr("");}}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-gray-600 bg-gray-50 active:bg-gray-100 transition mb-1">
-              <span>📧</span>이메일로 가입 / 로그인
-            </button>
-            <button onClick={onDismiss} className="w-full mt-3 py-2 text-xs text-gray-400">나중에 하기</button>
-          </>
-        )}
-
-        {(view === "email-login" || view === "email-signup") && (
-          <>
-            <button onClick={()=>setView("main")} className="mb-4 flex items-center gap-1 text-sm text-gray-500">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-              돌아가기
-            </button>
-            <p className="text-lg font-extrabold text-gray-900 mb-5">
-              {view === "email-signup" ? "이메일로 가입하기" : "이메일로 로그인"}
-            </p>
-            <input type="email" placeholder="이메일 주소" value={email} onChange={e=>setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm mb-3 outline-none focus:border-orange-400 transition"/>
-            <input type="password" placeholder={view==="email-signup" ? "비밀번호 (8자 이상)" : "비밀번호"} value={password} onChange={e=>setPassword(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm mb-3 outline-none focus:border-orange-400 transition"
-              onKeyDown={e=>e.key==="Enter" && handleEmailSubmit(view==="email-signup")}/>
-            {err && <p className="text-xs text-red-500 mb-3 px-1">{err}</p>}
-            <button onClick={()=>handleEmailSubmit(view==="email-signup")} disabled={loading}
-              className="w-full py-4 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition disabled:opacity-60 mb-3">
-              {loading ? "처리 중..." : view==="email-signup" ? "가입하기" : "로그인"}
-            </button>
-            <button onClick={()=>setView(view==="email-signup" ? "email-login" : "email-signup")}
-              className="w-full py-2 text-xs text-gray-400">
-              {view==="email-signup" ? "이미 계정이 있나요? 로그인" : "계정이 없나요? 가입하기"}
-            </button>
-          </>
-        )}
+        <p className="text-xl font-extrabold text-gray-900 text-center">1초 가입하고</p>
+        <p className="text-xl font-extrabold text-orange-500 text-center mb-2">최저가 알림 받기 🔔</p>
+        <p className="text-xs text-gray-400 text-center mb-6">카카오 계정으로 간편 가입 즉시 이용 가능</p>
+        <div className="bg-[#FFFBEE] rounded-2xl p-4 mb-6">
+          <p className="text-xs font-bold text-gray-700 mb-2">💬 카카오 가입 혜택</p>
+          <div className="grid grid-cols-2 gap-y-1.5">
+            {["❤️ 관심상품 저장","🔔 최저가 알림","💬 카카오톡 알림","🔗 카카오로 공유"].map(b=>(
+              <p key={b} className="text-[11px] text-gray-600">{b}</p>
+            ))}
+          </div>
+        </div>
+        <button onClick={handleKakao}
+          className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-base font-extrabold transition active:scale-95 shadow-sm"
+          style={{background:"#FEE500", color:"#181600"}}>
+          <span className="text-xl">💬</span>카카오로 1초 가입하기
+        </button>
+        <button onClick={onDismiss} className="w-full mt-4 py-2.5 text-xs text-gray-400">나중에 하기</button>
       </div>
     </div>
   );
