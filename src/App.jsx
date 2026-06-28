@@ -24,16 +24,16 @@ const PRODUCT_TEMPLATES = [
   { namePrefix:"Xiaomi 스마트워치",     shortPrefix:"샤오미 워치",     basePrice:62000,  image:"https://placehold.co/320x320/FDF4FF/C084FC?text=⌚", tag:"역대최저",   deliveryDays:5, rating:4.7 },
   { namePrefix:"Toocki GaN 미니 충전기",shortPrefix:"Toocki 충전기",   basePrice:3900,   image:"https://placehold.co/320x320/FFFBEB/FCD34D?text=🔌", tag:"핫딜",       deliveryDays:4, rating:4.5 },
   { namePrefix:"ELEGOO RGB 무드등",     shortPrefix:"RGB 무드등",      basePrice:8900,   image:"https://placehold.co/320x320/ECFDF5/34D399?text=💡", tag:"최저가근접", deliveryDays:5, rating:4.3 },
-  { namePrefix:"Joyroom 케이블 세트",   shortPrefix:"케이블 세트",     basePrice:7500,   image:"https://placehold.co/320x320/EFF6FF/60A5FA?text=🔗", tag:"특가",       deliveryDays:3, rating:4.6 },
-  { namePrefix:"Baseus 무선충전 패드",  shortPrefix:"무선충전 패드",   basePrice:4500,   image:"https://placehold.co/320x320/FFF1F2/F43F5E?text=📡", tag:"긴급핫딜",   deliveryDays:5, rating:4.4 },
+  { namePrefix:"Joyroom 케이블 세트",   shortPrefix:"케이블 세트",     basePrice:7500,   image:"https://placehold.co/320x320/EFF6FF/60A5FA?text=🔌", tag:"특가",       deliveryDays:3, rating:4.6 },
+  { namePrefix:"Baseus 무선충전 패드",  shortPrefix:"무선충전 패드",   basePrice:4500,   image:"https://placehold.co/320x320/FFF1F2/F43F5E?text=⚡", tag:"긴급핫딜",   deliveryDays:5, rating:4.4 },
   { namePrefix:"Xiaomi 공기청정기",     shortPrefix:"샤오미 공기청정기",basePrice:89000, image:"https://placehold.co/320x320/F0FDF4/4ADE80?text=🌀", tag:"역대최저",   deliveryDays:5, rating:4.8 },
   { namePrefix:"LED 마스크팩 기기",     shortPrefix:"LED 마스크팩",    basePrice:32000,  image:"https://placehold.co/320x320/FFF7ED/FB923C?text=💄", tag:"핫딜",       deliveryDays:4, rating:4.5 },
-  { namePrefix:"HAGIBIS USB-C 허브",    shortPrefix:"USB-C 허브",      basePrice:24900,  image:"https://placehold.co/320x320/F0F0FF/818CF8?text=🔗", tag:"특가",       deliveryDays:5, rating:4.6 },
+  { namePrefix:"HAGIBIS USB-C 허브",    shortPrefix:"USB-C 허브",      basePrice:24900,  image:"https://placehold.co/320x320/F0F0FF/818CF8?text=🔌", tag:"특가",       deliveryDays:5, rating:4.6 },
   { namePrefix:"Baseus 보조배터리",     shortPrefix:"보조배터리",      basePrice:28900,  image:"https://placehold.co/320x320/FFF8F0/FB923C?text=🔋", tag:"역대최저",   deliveryDays:3, rating:4.7 },
   { namePrefix:"Xiaomi 게이밍 마우스",  shortPrefix:"게이밍 마우스",   basePrice:16500,  image:"https://placehold.co/320x320/F0FFF8/34D399?text=🖱", tag:"핫딜",       deliveryDays:5, rating:4.4 },
   { namePrefix:"UGREEN 노트북 거치대",  shortPrefix:"노트북 거치대",   basePrice:19900,  image:"https://placehold.co/320x320/F8F0FF/C084FC?text=💻", tag:"최저가근접", deliveryDays:4, rating:4.5 },
   { namePrefix:"샤오미 스마트 플러그",  shortPrefix:"스마트 플러그",   basePrice:8500,   image:"https://placehold.co/320x320/ECFDF5/10B981?text=🔌", tag:"특가",       deliveryDays:5, rating:4.3 },
-  { namePrefix:"Anker 마그네틱 케이블", shortPrefix:"마그네틱 케이블", basePrice:12000,  image:"https://placehold.co/320x320/EFF6FF/3B82F6?text=🔗", tag:"핫딜",       deliveryDays:4, rating:4.6 },
+  { namePrefix:"Anker 마그네틱 케이블", shortPrefix:"마그네틱 케이블", basePrice:12000,  image:"https://placehold.co/320x320/EFF6FF/3B82F6?text=🔌", tag:"핫딜",       deliveryDays:4, rating:4.6 },
   { namePrefix:"JMGO 미니 빔프로젝터",  shortPrefix:"미니 빔프로젝터", basePrice:145000, image:"https://placehold.co/320x320/FDF4FF/A855F7?text=📽", tag:"역대최저",   deliveryDays:5, rating:4.7 },
   { namePrefix:"Dreame 무선 청소기",    shortPrefix:"무선 청소기",     basePrice:178000, image:"https://placehold.co/320x320/F0FDF4/22C55E?text=🌀", tag:"긴급핫딜",   deliveryDays:5, rating:4.8 },
 ];
@@ -80,13 +80,13 @@ const generateDummyPage = (page) => {
 // 기타 더미 데이터
 // ═══════════════════════════════════════════════════════════════════
 const CATEGORIES = [
-  { id:"domestic",  icon:"🚢", label:"한국배송" },
+  { id:"domestic",  icon:"🏠", label:"한국배송" },
   { id:"cheap",     icon:"💸", label:"초저가템" },
   { id:"popular",   icon:"🏆", label:"인기랭킹" },
   { id:"reviewed",  icon:"⭐", label:"리뷰많은" },
   { id:"limited",   icon:"⚡", label:"한정특가" },
   { id:"value",     icon:"💎", label:"실속상품" },
-  { id:"monthly",   icon:"📅", label:"월간옵션" },
+  { id:"monthly",   icon:"🗓️", label:"월간옵션" },
   { id:"freeship",  icon:"🚚", label:"무료배송" },
 ];
 
@@ -104,7 +104,7 @@ const DISCOUNT_CODES = [
 ];
 
 const PROMO_BANNERS = [
-  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🗓 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"] },
+  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🎊 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"] },
   { id:"b2", title:"공식 브랜드 위크",     sub:"샤오미·안커·바세우스 특가", badge:"🏷 브랜드위크", bg:"linear-gradient(135deg,#6366F1,#8B5CF6)",  products:["노트북","이어폰","스마트홈"] },
   { id:"b3", title:"플래시 딜 3시간",      sub:"오늘만 이 가격!",           badge:"⚡ 긴급",       bg:"linear-gradient(135deg,#0EA5E9,#6366F1)",  products:["케이블","보조배터리","거치대"] },
   { id:"b4", title:"무료배송 페스티벌",    sub:"전품목 무료배송 이벤트",    badge:"🚚 무배축제",   bg:"linear-gradient(135deg,#10B981,#0EA5E9)",  products:["생활용품","뷰티","주방"] },
@@ -429,42 +429,88 @@ const BottomNav = ({ active, onNav }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// 모달: 로그인 (카카오 간편가입)
+// 모달: 이메일 회원가입 / 로그인
 // ═══════════════════════════════════════════════════════════════════
-const LoginModal = ({ onDismiss }) => {
-  const handleKakao = () => { window.location.href = `${API_BASE}/api/auth/kakao/login`; };
+const EmailAuthModal = ({ onDismiss, onLoginSuccess }) => {
+  const [tab, setTab]       = useState("register"); // "register" | "login"
+  const [email, setEmail]   = useState("");
+  const [pw, setPw]         = useState("");
+  const [loading, setLoad]  = useState(false);
+  const [err, setErr]       = useState("");
+
+  const submit = async () => {
+    setErr("");
+    if (!email.includes("@")) { setErr("올바른 이메일을 입력해주세요."); return; }
+    if (pw.length < 8) { setErr("비밀번호는 8자 이상이어야 합니다."); return; }
+    setLoad(true);
+    try {
+      const endpoint = tab === "register" ? "/api/auth/email/register" : "/api/auth/email/login";
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pw }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.detail || "오류가 발생했습니다."); return; }
+      try { sessionStorage.setItem("ali_token", data.token); } catch {}
+      onLoginSuccess({ user_id: data.user_id || "", email: data.email, provider: "email", logged_in: true });
+      onDismiss();
+    } catch { setErr("네트워크 오류가 발생했습니다."); }
+    finally { setLoad(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onDismiss}>
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
-           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 32px)"}}
+           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 28px)"}}
            onClick={e=>e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
-        <p className="text-xl font-extrabold text-gray-900 text-center">1초 가입하고</p>
-        <p className="text-xl font-extrabold text-orange-500 text-center mb-2">최저가 알림 받기 🔔</p>
-        <p className="text-xs text-gray-400 text-center mb-6">카카오 계정으로 간편 가입 즉시 이용 가능</p>
-        <div className="bg-[#FFFBEE] rounded-2xl p-4 mb-6">
-          <p className="text-xs font-bold text-gray-700 mb-2">💬 카카오 가입 혜택</p>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+
+        {/* 탭 */}
+        <div className="flex bg-[#F7F7F8] rounded-2xl p-1 mb-5">
+          {[["register","회원가입"],["login","로그인"]].map(([v,l])=>(
+            <button key={v} onClick={()=>{setTab(v);setErr("");}}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${tab===v?"bg-white text-gray-900 shadow-sm":"text-gray-400"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {/* 혜택 카드 */}
+        <div className="bg-[#EFF6FF] rounded-2xl p-4 mb-5">
+          <p className="text-xs font-bold text-blue-700 mb-2">📧 이메일 가입 혜택</p>
           <div className="grid grid-cols-2 gap-y-1.5">
-            {["❤️ 관심상품 저장","🔔 최저가 알림","💬 카카오톡 알림","🔗 카카오로 공유"].map(b=>(
-              <p key={b} className="text-[11px] text-gray-600">{b}</p>
+            {["📈 가격기록 영구 보관","❤️ 관심상품 영구 저장","🔔 최저가 알림 이메일 수신","🔄 기기 변경 시 데이터 연동"].map(b=>(
+              <p key={b} className="text-[11px] text-blue-800">{b}</p>
             ))}
           </div>
         </div>
-        <button onClick={handleKakao}
-          className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-base font-extrabold transition active:scale-95 shadow-sm"
-          style={{background:"#FEE500", color:"#181600"}}>
-          <span className="text-xl">💬</span>카카오로 1초 가입하기
+
+        {/* 입력 */}
+        <div className="space-y-3 mb-3">
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+            placeholder="이메일 주소"
+            className="w-full border border-gray-200 rounded-2xl px-4 py-3.5 text-sm outline-none focus:border-blue-400 transition"
+            onKeyDown={e=>e.key==="Enter" && submit()} />
+          <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
+            placeholder="비밀번호 (8자 이상)"
+            className="w-full border border-gray-200 rounded-2xl px-4 py-3.5 text-sm outline-none focus:border-blue-400 transition"
+            onKeyDown={e=>e.key==="Enter" && submit()} />
+        </div>
+        {err && <p className="text-xs text-red-500 mb-3 px-1">{err}</p>}
+        <button onClick={submit} disabled={loading}
+          className="w-full py-4 rounded-2xl bg-blue-500 text-white font-bold text-sm active:bg-blue-600 transition disabled:opacity-60">
+          {loading ? "처리 중..." : (tab==="register" ? "이메일로 가입하기" : "로그인")}
         </button>
-        <button onClick={onDismiss} className="w-full mt-4 py-2.5 text-xs text-gray-400">나중에 하기</button>
+        <button onClick={onDismiss} className="w-full mt-3 py-2.5 text-xs text-gray-400">나중에 하기</button>
       </div>
     </div>
   );
 };
 
-// 모달: 공유
-const ShareSheet = ({ product, onClose, showToast, user }) => {
+// 모달: 공유 (모든 사용자 가능)
+const ShareSheet = ({ product, onClose, showToast }) => {
   const url  = `https://alitrack.kr/p/${product.id}`;
   const text = encodeURIComponent(`[AliTrack] ${product.name}\n${url}`);
 
@@ -482,8 +528,6 @@ const ShareSheet = ({ product, onClose, showToast, user }) => {
     onClose();
   };
 
-  const isKakao = user?.provider === "kakao";
-
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
@@ -493,14 +537,13 @@ const ShareSheet = ({ product, onClose, showToast, user }) => {
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
         <p className="text-sm font-bold text-gray-900 mb-4">공유하기</p>
         {[
-          ...(isKakao ? [{label:"카카오톡으로 공유",icon:"💬",action:shareKakao,badge:"카카오 회원"}] : []),
-          {label:"문자로 보내기",icon:"📱",action:shareSms},
-          {label:"링크 복사하기",icon:"🔗",action:copy},
+          {label:"카카오톡으로 공유",icon:"💬",action:shareKakao},
+          {label:"문자로 보내기",   icon:"📱",action:shareSms},
+          {label:"링크 복사하기",   icon:"🔗",action:copy},
         ].map(i=>(
           <button key={i.label} onClick={i.action}
             className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 transition text-sm font-semibold text-gray-800 mb-2">
             <span className="text-xl">{i.icon}</span>{i.label}
-            {i.badge && <span className="ml-auto text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">{i.badge}</span>}
           </button>
         ))}
       </div>
@@ -515,15 +558,15 @@ const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
   const [step, setStep]     = useState("price");
   const [target, setTarget] = useState(String(Math.round((product?.price || 0) * 0.9)));
   const [loading, setLoad]  = useState(false);
-  const isKakao  = user?.provider === "kakao";
-  const curPrice = product?.price || 0;
+  const isEmailUser = user?.provider === "email";
+  const curPrice    = product?.price || 0;
 
   const submit = async () => {
     const price = parseInt(target.replace(/[^0-9]/g,""), 10);
     if (!price || price <= 0) { showToast("올바른 가격을 입력해주세요."); return; }
 
-    if (isKakao) {
-      // 카카오 회원 → 백엔드 저장
+    if (isEmailUser) {
+      // 이메일 회원 → 백엔드 저장
       setLoad(true);
       try {
         const tok = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
@@ -536,7 +579,7 @@ const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
       } catch { showToast("네트워크 오류"); return; }
       finally { setLoad(false); }
     } else {
-      // 미회원 → localStorage 저장
+      // 게스트 → localStorage 저장
       saveLocalAlert({ product_id: product.id, product_name: product.name, image: product.image, target_price: price, current_price: curPrice, saved_at: new Date().toISOString() });
     }
     setStep("done");
@@ -580,35 +623,34 @@ const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
               <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3">🔔</div>
               <p className="text-lg font-extrabold text-gray-900">알림이 등록됐어요!</p>
               <p className="text-xs text-gray-400 mt-1">
-                {isKakao ? "카카오 계정에 저장됐어요" : `이 기기에 저장됐어요 (ID: ${getGuestId()})`}
+                {isEmailUser ? "이메일 계정에 저장됐어요" : `이 기기에 저장됐어요 (ID: ${getGuestId()})`}
               </p>
             </div>
 
-            {!isKakao && (
-              <div className="bg-[#FFFBEE] border border-yellow-200 rounded-2xl p-4 mb-4">
-                <p className="text-sm font-extrabold text-gray-900 mb-0.5">💬 카카오로 시작하면</p>
+            {!isEmailUser && (
+              <div className="bg-[#EFF6FF] border border-blue-200 rounded-2xl p-4 mb-4">
+                <p className="text-sm font-extrabold text-gray-900 mb-0.5">📧 이메일 회원가입하면</p>
                 <p className="text-xs text-gray-500 mb-3">소중한 기록이 안전하게 보관돼요</p>
                 <div className="space-y-1.5 mb-4">
                   {[
                     "📈 가격기록 — 영구 보관",
                     "❤️ 관심상품 — 영구 저장",
                     "🔄 기기 변경 시 데이터 연동",
-                    "💬 카카오톡 알림 수신",
+                    "📬 최저가 달성 시 이메일 알림",
                   ].map(t=>(
                     <p key={t} className="text-[12px] text-gray-700 flex items-center gap-1.5">{t}</p>
                   ))}
                 </div>
                 <button onClick={()=>{ onClose(); setTimeout(showLogin, 80); }}
-                  className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2"
-                  style={{background:"#FEE500",color:"#181600"}}>
-                  <span>💬</span>카카오로 계속하기 →
+                  className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 bg-blue-500 text-white">
+                  이메일로 가입하기 →
                 </button>
               </div>
             )}
 
             <button onClick={onClose}
               className="w-full py-3 rounded-2xl text-sm font-semibold text-gray-500 bg-gray-50 active:bg-gray-100 transition">
-              {isKakao ? "확인" : "나중에"}
+              {isEmailUser ? "확인" : "나중에"}
             </button>
           </>
         )}
@@ -1482,7 +1524,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
         </a>
       </div>
 
-      {shareOpen && <ShareSheet product={product} onClose={()=>setShareOpen(false)} showToast={showToast} user={user}/>}
+      {shareOpen && <ShareSheet product={product} onClose={()=>setShareOpen(false)} showToast={showToast}/>}
       {alertOpen && <AlertModal product={product} user={user} onClose={()=>{ setAlertOpen(false); setAlertActive(getLocalAlerts().some(a=>a.product_id===product.id)); }} showToast={showToast} showLogin={showLogin}/>}
     </>
   );
@@ -1821,7 +1863,7 @@ const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
             </div>
           ))}
           <p className="text-[11px] text-gray-400 text-center pt-2">
-            이 기기에만 저장됩니다 · 카카오 가입 시 계정에 통합돼요
+            이 기기에만 저장됩니다 · 이메일 가입 시 계정에 통합돼요
           </p>
         </div>
       )}
@@ -1871,7 +1913,7 @@ const LocalWishlistScreen = ({ onBack, onGoHome, onProduct, showToast }) => {
             </div>
           ))}
           <p className="text-[11px] text-gray-400 text-center pt-2">
-            이 기기에만 저장됩니다 · 카카오 가입 시 계정에 통합돼요
+            이 기기에만 저장됩니다 · 이메일 가입 시 계정에 통합돼요
           </p>
         </div>
       )}
@@ -1907,7 +1949,7 @@ const EmptyPriceHistory = ({ onGoHome }) => (
   </div>
 );
 
-// ─── 미회원 나의기록 (게스트 ID + 로컬 알림 현황 + Kakao 유도) ────
+// ─── 미회원 나의기록 (게스트 ID + 로컬 데이터 현황 + 이메일 가입 유도) ────
 const GuestMypage = ({ onLogin }) => {
   const [guestId, setGuestId]   = useState(getGuestId);
   const [editing, setEditing]   = useState(false);
@@ -1933,17 +1975,17 @@ const GuestMypage = ({ onLogin }) => {
             <p className="text-xs text-gray-400">나의 게스트 ID</p>
             {editing ? (
               <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==="Enter" && saveId()}
-                className="text-base font-extrabold text-gray-900 bg-transparent outline-none border-b-2 border-orange-400 w-full" autoFocus />
+                className="text-base font-extrabold text-gray-900 bg-transparent outline-none border-b-2 border-blue-400 w-full" autoFocus />
             ) : (
               <p className="text-base font-extrabold text-gray-900">{guestId}</p>
             )}
           </div>
           <button onClick={()=>{ if(editing) saveId(); else { setDraft(guestId); setEditing(true); }}}
-            className="text-xs text-orange-500 font-bold px-3 py-1.5 rounded-xl bg-orange-50 active:bg-orange-100">
+            className="text-xs text-blue-500 font-bold px-3 py-1.5 rounded-xl bg-blue-50 active:bg-blue-100">
             {editing ? "저장" : "변경"}
           </button>
         </div>
-        <p className="text-[11px] text-gray-400">이 기기에서만 유효 · 카카오 가입 시 데이터 이전 가능</p>
+        <p className="text-[11px] text-gray-400">이 기기에서만 유효 · 이메일 가입 시 데이터 이전 가능</p>
       </div>
 
       {/* 로컬 현황 */}
@@ -1966,19 +2008,18 @@ const GuestMypage = ({ onLogin }) => {
         </div>
       </div>
 
-      {/* Kakao 유도 */}
-      <div className="bg-[#FFFBEE] border border-yellow-200 rounded-3xl p-5">
-        <p className="text-sm font-extrabold text-gray-900 mb-1">💬 카카오로 시작하면</p>
+      {/* 이메일 가입 유도 */}
+      <div className="bg-[#EFF6FF] border border-blue-200 rounded-3xl p-5">
+        <p className="text-sm font-extrabold text-gray-900 mb-1">📧 이메일로 가입하면</p>
         <p className="text-xs text-gray-500 mb-3">소중한 기록이 안전하게 보관돼요</p>
         <div className="space-y-1.5 mb-4">
-          {["📈 가격기록 영구 보관","❤️ 관심상품 영구 저장","🔄 기기 변경 시 데이터 연동","💬 카카오톡 알림 수신"].map(t=>(
+          {["📈 가격기록 영구 보관","❤️ 관심상품 영구 저장","🔄 기기 변경 시 데이터 연동","📬 최저가 달성 시 이메일 알림"].map(t=>(
             <p key={t} className="text-[12px] text-gray-700">{t}</p>
           ))}
         </div>
         <button onClick={onLogin}
-          className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2"
-          style={{background:"#FEE500",color:"#181600"}}>
-          <span>💬</span>카카오로 계속하기 →
+          className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 bg-blue-500 text-white active:bg-blue-600 transition">
+          이메일로 가입하기 →
         </button>
       </div>
     </div>
@@ -1989,34 +2030,28 @@ const GuestMypage = ({ onLogin }) => {
 const EmptyMypage = ({ onLogin }) => <GuestMypage onLogin={onLogin}/>;
 
 const LoggedInMypage = ({ user, onLogout }) => {
-  const isKakao = user?.provider === "kakao";
-  const email   = user?.email || "";
-  const isInternalEmail = email.endsWith("@kakao.local") || email.endsWith("@alitrack.kr");
-  // nickname 우선, 없으면 이메일 앞부분, 내부 주소면 "카카오 사용자"
-  const nick = user?.nickname || (isInternalEmail ? "카카오 사용자" : (email.split("@")[0] || "사용자"));
-  const displayEmail = isInternalEmail ? "" : email;
+  const email = user?.email || "";
+  const nick  = user?.nickname || (email.split("@")[0] || "사용자");
 
   return (
     <div className="px-4 py-6 space-y-4">
       <div className="bg-[#F7F7F8] rounded-3xl p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">
-          {isKakao ? "💬" : "👤"}
-        </div>
+        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">📧</div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-extrabold text-gray-900 truncate">{nick}</p>
-          <p className="text-xs text-gray-400 truncate">{displayEmail}</p>
-          <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                style={{background: isKakao ? "#FEE500":"#F7F7F8", color: isKakao ? "#181600":"#555"}}>
-            {isKakao ? "💬 카카오 회원" : "👤 게스트"}
+          <p className="text-xs text-gray-400 truncate">{email}</p>
+          <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600">
+            📧 이메일 회원
           </span>
         </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-gray-100 divide-y divide-gray-50">
         {[
-          { icon:"❤️", label:"찜한 상품", desc:"영구 저장됨" },
-          { icon:"🔔", label:"가격 알림", desc:"이메일 + 카카오 알림" },
-          ...(isKakao ? [{ icon:"💬", label:"카카오톡 알림", desc:"메시지로 최저가 알림 수신" }] : []),
+          { icon:"❤️", label:"찜한 상품",   desc:"영구 저장됨" },
+          { icon:"🔔", label:"가격 알림",   desc:"이메일로 최저가 알림 수신" },
+          { icon:"📈", label:"가격기록",    desc:"영구 보관됨" },
+          { icon:"🔄", label:"기기 연동",   desc:"어느 기기에서나 동일한 데이터" },
         ].map(item => (
           <div key={item.label} className="flex items-center gap-4 px-5 py-4">
             <span className="text-xl">{item.icon}</span>
@@ -2037,63 +2072,195 @@ const LoggedInMypage = ({ user, onLogout }) => {
   );
 };
 
-// 더보기 화면 (피드백 버튼 + 법적 링크 포함)
-const MoreScreen = ({ onBack, onFeedback, onPrivacy, onTerms }) => (
-  <div className="pb-10">
-    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-      <button onClick={onBack}
-        className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700 active:bg-gray-200 transition flex-shrink-0">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M12 5l-7 7 7 7"/>
-        </svg>
-      </button>
-      <p className="text-base font-bold text-gray-900">더보기</p>
-    </div>
+// ─── 알림 설정 시트 ──────────────────────────────────────────────────
+const NotificationSettingsSheet = ({ onClose }) => {
+  const load = () => { try { return JSON.parse(localStorage.getItem("alitrack_notif_settings") || "{}"); } catch { return {}; } };
+  const [s, setS] = useState(() => ({ card: true, night: false, sensitivity: "보통", ...load() }));
 
-    <div className="px-4 py-5 space-y-3">
-      {/* 피드백 */}
-      <div>
-        <p className="text-xs font-bold text-gray-400 px-1 mb-2">고객 지원</p>
-        {[
-          { icon:"🐛", label:"오류 신고 · 기능 제안", action: onFeedback, badge:"문의하기" },
-          { icon:"💬", label:"카카오톡 채널 상담", action:()=>window.open("https://pf.kakao.com/_ARQxfX/friend","_blank"), badge:"바로가기" },
-        ].map(i => (
-          <button key={i.label} onClick={i.action}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-[#F7F7F8] active:bg-gray-100 transition mb-2">
-            <span className="text-xl">{i.icon}</span>
-            <span className="flex-1 text-sm font-semibold text-gray-800 text-left">{i.label}</span>
-            <span className="text-xs text-orange-500 font-bold">{i.badge}</span>
-          </button>
-        ))}
-      </div>
+  const save = (next) => {
+    setS(next);
+    try { localStorage.setItem("alitrack_notif_settings", JSON.stringify(next)); } catch {}
+  };
+  const toggle = (key) => save({ ...s, [key]: !s[key] });
 
-      {/* 앱 정보 */}
-      <div>
-        <p className="text-xs font-bold text-gray-400 px-1 mb-2">앱 정보</p>
-        <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
+  return (
+    <div className="fixed inset-0 z-[160] flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-5 animate-slideUp"
+           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 28px)"}}
+           onClick={e=>e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+        <p className="text-base font-extrabold text-gray-900 mb-4">알림 설정</p>
+
+        <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden mb-4">
           {[
-            { icon:"🔒", label:"개인정보처리방침", action: onPrivacy },
-            { icon:"📄", label:"이용약관",         action: onTerms  },
-            { icon:"📧", label:"이메일 문의",       action:()=>window.open("mailto:help@alitrack.kr") },
-          ].map((i, idx, arr) => (
-            <button key={i.label} onClick={i.action}
-              className={`w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition ${idx < arr.length-1 ? "border-b border-gray-100" : ""}`}>
-              <span className="text-lg">{i.icon}</span>
-              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">{i.label}</span>
-              <span className="text-gray-400 text-xs">›</span>
+            { key:"card",  label:"카드/쿠폰 알림",  desc:"할인 카드·쿠폰 정보 알림" },
+            { key:"night", label:"야간 알림",        desc:"오후 10시 ~ 오전 8시 알림" },
+          ].map((item, idx, arr) => (
+            <div key={item.key} className={`flex items-center gap-4 px-4 py-4 ${idx < arr.length-1 ? "border-b border-gray-100" : ""}`}>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">{item.label}</p>
+                <p className="text-xs text-gray-400">{item.desc}</p>
+              </div>
+              <button onClick={()=>toggle(item.key)}
+                className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${s[item.key]?"bg-blue-500":"bg-gray-200"}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${s[item.key]?"left-6":"left-0.5"}`}/>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs font-bold text-gray-500 mb-2 px-1">가격 민감도</p>
+        <div className="flex gap-2 mb-5">
+          {[["낮음","1%"],["보통","5%"],["높음","10%"]].map(([l,v])=>(
+            <button key={l} onClick={()=>save({...s,sensitivity:l})}
+              className={`flex-1 py-3 rounded-2xl text-sm font-bold transition ${s.sensitivity===l?"bg-blue-500 text-white":"bg-[#F7F7F8] text-gray-500"}`}>
+              {l}<br/><span className="text-xs font-normal">{v} 이상</span>
             </button>
           ))}
         </div>
-      </div>
-
-      {/* 버전 정보 */}
-      <div className="text-center py-4">
-        <p className="text-xs text-gray-400">AliTrack v4.2.0 · © 2026 AliTrack</p>
-        <p className="text-[10px] text-gray-300 mt-1">Made with ❤️ for Korean Ali Shoppers</p>
+        <button onClick={onClose}
+          className="w-full py-4 rounded-2xl bg-blue-500 text-white font-bold text-sm">저장하기</button>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// ─── 더보기 화면 ─────────────────────────────────────────────────────
+const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, showToast }) => {
+  const [showNotif, setShowNotif] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+
+  // 누적 절감액: 위시리스트 (orig - price) 합계
+  const savings = getLocalWishlist().reduce((acc, p) => acc + ((p.orig || 0) - (p.price || 0)), 0);
+
+  const clearCache = () => {
+    try {
+      const keep = ["alitrack_local_alerts","alitrack_wishlist","alitrack_guest_id","alitrack_onboarded","alitrack_cookie_consent","alitrack_notif_settings"];
+      Object.keys(localStorage).filter(k=>!keep.includes(k)).forEach(k=>localStorage.removeItem(k));
+    } catch {}
+    showToast("캐시가 삭제됐어요");
+  };
+
+  return (
+    <div className="pb-10">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-gray-100">
+        <p className="text-base font-bold text-gray-900">더보기</p>
+      </div>
+
+      <div className="px-4 py-5 space-y-4">
+        {/* 누적 절감액 */}
+        <div className="rounded-3xl p-5 text-white" style={{background:"linear-gradient(135deg,#FF5A1F,#F59E0B)"}}>
+          <p className="text-xs font-bold opacity-80 mb-1">나의 누적 절감액</p>
+          <p className="text-3xl font-extrabold">{savings > 0 ? fmt(savings) : "0원"}</p>
+          <p className="text-xs opacity-70 mt-1">알리트랙으로 절약한 금액이에요 🎉</p>
+        </div>
+
+        {/* 계정 */}
+        {user ? (
+          <div className="bg-[#F7F7F8] rounded-2xl px-4 py-4 flex items-center gap-3">
+            <span className="text-2xl">📧</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">{user.email}</p>
+              <p className="text-xs text-blue-500 font-bold">이메일 회원</p>
+            </div>
+            <button onClick={onLogout} className="text-xs text-gray-400 font-semibold px-3 py-1.5 rounded-xl bg-white border border-gray-200">로그아웃</button>
+          </div>
+        ) : (
+          <button onClick={onLogin}
+            className="w-full py-4 rounded-2xl bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2">
+            📧 이메일로 가입하고 데이터 보관
+          </button>
+        )}
+
+        {/* 서비스 설정 */}
+        <div>
+          <p className="text-xs font-bold text-gray-400 px-1 mb-2">서비스 설정</p>
+          <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
+            <button onClick={()=>setShowNotif(true)}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+              <span className="text-lg">🔔</span>
+              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </button>
+            <button onClick={clearCache}
+              className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition">
+              <span className="text-lg">🗑️</span>
+              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">앱 캐시 삭제</span>
+              <span className="text-xs text-orange-500 font-bold">삭제</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 고객 지원 */}
+        <div>
+          <p className="text-xs font-bold text-gray-400 px-1 mb-2">고객 지원</p>
+          <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
+            <button onClick={()=>showToast("AliTrack: 상품 검색 → 상세 → 알림 신청 순으로 이용하세요 😊")}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+              <span className="text-lg">📖</span>
+              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알리트랙 사용법</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </button>
+            <button onClick={()=>setShowWithdraw(true)}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+              <span className="text-lg">🚪</span>
+              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">계정 탈퇴</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </button>
+            <div className="flex items-center gap-3 px-4 py-4">
+              <span className="text-lg">ℹ️</span>
+              <span className="flex-1 text-sm font-semibold text-gray-800">현재 버전</span>
+              <span className="text-xs text-gray-400 font-medium">v4.2.0</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 앱 정보 */}
+        <div>
+          <p className="text-xs font-bold text-gray-400 px-1 mb-2">앱 정보</p>
+          <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
+            {[
+              { icon:"🔒", label:"개인정보처리방침", action: onPrivacy },
+              { icon:"📄", label:"이용약관",         action: onTerms  },
+              { icon:"✉️", label:"이메일 문의",       action:()=>window.open("mailto:help@alitrack.kr") },
+            ].map((i,idx,arr)=>(
+              <button key={i.label} onClick={i.action}
+                className={`w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition ${idx<arr.length-1?"border-b border-gray-100":""}`}>
+                <span className="text-lg">{i.icon}</span>
+                <span className="flex-1 text-sm font-semibold text-gray-800 text-left">{i.label}</span>
+                <span className="text-gray-400 text-xs">›</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="text-center py-3">
+          <p className="text-xs text-gray-400">AliTrack v4.2.0 · © 2026 AliTrack</p>
+          <p className="text-[10px] text-gray-300 mt-1">Made with ❤️ for Korean Ali Shoppers</p>
+        </div>
+      </div>
+
+      {showNotif && <NotificationSettingsSheet onClose={()=>setShowNotif(false)}/>}
+
+      {showWithdraw && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center px-6" onClick={()=>setShowWithdraw(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-3xl p-6 w-full max-w-[340px]" onClick={e=>e.stopPropagation()}>
+            <p className="text-base font-extrabold text-gray-900 mb-2">정말 탈퇴하시겠어요?</p>
+            <p className="text-xs text-gray-400 mb-5">탈퇴 시 모든 데이터가 삭제됩니다.</p>
+            <div className="flex gap-2">
+              <button onClick={()=>setShowWithdraw(false)}
+                className="flex-1 py-3 rounded-2xl bg-[#F7F7F8] text-sm font-bold text-gray-600">취소</button>
+              <button onClick={()=>{ showToast("탈퇴 처리되었습니다."); setShowWithdraw(false); if(onLogout) onLogout(); }}
+                className="flex-1 py-3 rounded-2xl bg-red-500 text-sm font-bold text-white">탈퇴</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // App 루트 — 7가지 기능 통합
@@ -2200,12 +2367,13 @@ export default function App() {
 
   // ④ 피드백 시트
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
 
   const showLogin = useCallback(()=>setLoginModal(true),[]);
   const handleLoginDismiss = ()=>setLoginModal(null);
   const handleLoginSuccess = useCallback((data)=>{
     setUser({ user_id: data.user_id || "", email: data.email, provider: data.provider || "email", logged_in: true });
-    showToast("로그인 성공! 🎉");
+    showToast("이메일로 로그인 성공!");
   },[showToast]);
 
   const saveScroll = useCallback(()=>{
@@ -2287,8 +2455,7 @@ export default function App() {
           {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
-      // 더보기 화면
-      case "more":     return <MoreScreen onBack={goBack} onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")}/>;
+      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast}/>;
       // 법적 페이지
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
@@ -2343,17 +2510,10 @@ export default function App() {
               <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full">BETA</span>
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={showLogin}
+              <button onClick={()=>setShowNotifSettings(true)}
                 className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">🔔</button>
-              {user
-                ? <button onClick={handleLogout}
-                    className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-sm active:bg-orange-100 transition" title={user.email}>👤</button>
-                : <button onClick={showLogin}
-                    className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">👤</button>
-              }
-              {/* ④ 피드백 버튼 (우상단 플로팅) */}
-              <button onClick={()=>setShowFeedback(true)}
-                className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-sm active:bg-orange-100 transition">✏️</button>
+              <button onClick={()=>{ if(user){ goTo("mypage"); setActiveNav("mypage"); } else showLogin(); }}
+                className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition ${user?"bg-blue-50 active:bg-blue-100":"bg-[#F7F7F8] active:bg-gray-200"}`}>👤</button>
             </div>
           </header>
 
@@ -2387,8 +2547,11 @@ export default function App() {
       {/* ④ 피드백 시트 */}
       {showFeedback && <FeedbackSheet onClose={()=>setShowFeedback(false)} showToast={showToast}/>}
 
-      {/* 로그인 모달 */}
-      {loginModal && <LoginModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
+      {/* 알림 설정 시트 */}
+      {showNotifSettings && <NotificationSettingsSheet onClose={()=>setShowNotifSettings(false)}/>}
+
+      {/* 이메일 로그인/가입 모달 */}
+      {loginModal && <EmailAuthModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
     </>
   );
 }
