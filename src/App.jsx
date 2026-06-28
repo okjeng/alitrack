@@ -2399,17 +2399,15 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, s
               <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
               <span className="text-gray-400 text-xs">›</span>
             </button>
-            {onInstall && (
-              <button onClick={onInstall}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
-                <span className="text-lg">📲</span>
-                <div className="flex-1 text-left">
-                  <span className="block text-sm font-semibold text-gray-800">앱 설치하고 더 빠르게 사용하기</span>
-                  <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 실행</span>
-                </div>
-                <span className="text-gray-400 text-xs">›</span>
-              </button>
-            )}
+            <button onClick={onInstall}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+              <span className="text-lg">📲</span>
+              <div className="flex-1 text-left">
+                <span className="block text-sm font-semibold text-gray-800">앱 설치하고 더 빠르게 사용하기</span>
+                <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 실행</span>
+              </div>
+              <span className="text-gray-400 text-xs">›</span>
+            </button>
             <button onClick={clearCache}
               className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition">
               <span className="text-lg">🗑️</span>
@@ -2644,11 +2642,24 @@ export default function App() {
 
   // PWA 설치
   const handlePwaInstall = async () => {
-    if(window.__pwa?.install) {
-      const accepted = await window.__pwa.install();
-      if(accepted) showToast("홈 화면에 추가되었습니다! 🎉");
+    // 이미 설치된 경우 (standalone 모드)
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      showToast("이미 앱으로 설치되어 있어요 ✅");
+      return;
     }
-    setShowPwaBanner(false);
+    if (window.__pwa?.install) {
+      const accepted = await window.__pwa.install();
+      if (accepted) showToast("홈 화면에 추가되었습니다! 🎉");
+      setShowPwaBanner(false);
+    } else {
+      // iOS Safari 또는 설치 불가 환경 안내
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (isIOS) {
+        showToast("Safari 하단 공유 버튼 → '홈 화면에 추가' 를 눌러주세요 📱");
+      } else {
+        showToast("브라우저 주소창 오른쪽 설치 아이콘을 클릭하거나 메뉴에서 '앱 설치'를 선택해주세요");
+      }
+    }
   };
 
   const renderScreen = () => {
@@ -2669,7 +2680,7 @@ export default function App() {
           {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
-      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={showPwaBanner ? handlePwaInstall : null}/>;
+      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={handlePwaInstall}/>;
       // 법적 페이지
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
