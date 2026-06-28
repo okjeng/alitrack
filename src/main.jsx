@@ -6,7 +6,7 @@ import App from './App.jsx'
 // ─── 채널톡(Channel.io) 고객 채팅 초기화 ────────────────────────────
 // VITE_CHANNEL_PLUGIN_KEY 환경변수가 없으면 조용히 건너뜀
 ;(function () {
-  const key = import.meta.env.VITE_CHANNEL_PLUGIN_KEY;
+  const key = import.meta.env.VITE_CHANNEL_PLUGIN_KEY || '1a643988-c27c-4f08-a70a-2947b49bba9e';
   if (!key) return;
   var w = window;
   if (w.ChannelIO) return;
