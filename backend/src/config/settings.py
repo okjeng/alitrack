@@ -63,8 +63,11 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str = "https://alitrack-production.up.railway.app/api/auth/google/callback"
 
     # ── 이메일 파싱 (Gmail IMAP) ──────────────────────────────────
-    GMAIL_ADDRESS: str       = ""
+    GMAIL_ADDRESS: str       = "turtlesmotivation@gmail.com"
     GMAIL_APP_PASSWORD: str  = ""   # Gmail 앱 비밀번호 (계정 비밀번호 아님!)
+
+    # ── 스케줄러 인증 키 ─────────────────────────────────────────
+    CRON_SECRET: str         = ""
 
     # ── Redis (Rate Limit·캐시 저장소) ────────────────────────────
     REDIS_URL: str           = "redis://localhost:6379/0"

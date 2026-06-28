@@ -25,6 +25,7 @@ from src.middleware.xss_filter  import XSSFilterMiddleware
 from src.routes.products        import router as products_router
 from src.routes.proxy           import router as proxy_router
 from src.routes.auth            import router as auth_router
+from src.routes.scheduler       import router as scheduler_router
 from src.config.settings        import settings
 
 # JWT_SECRET 미설정 시 서버 시작 거부 — 빈 시크릿으로 토큰 위조 방지
@@ -97,9 +98,10 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(XSSFilterMiddleware)
 
 # ─── 라우터 등록 ──────────────────────────────────────────────────
-app.include_router(products_router, prefix="/api/products", tags=["products"])
-app.include_router(proxy_router,    prefix="/api/ali",      tags=["ali-proxy"])
-app.include_router(auth_router,     prefix="/api/auth",     tags=["auth"])
+app.include_router(products_router,  prefix="/api/products",  tags=["products"])
+app.include_router(proxy_router,     prefix="/api/ali",       tags=["ali-proxy"])
+app.include_router(auth_router,      prefix="/api/auth",      tags=["auth"])
+app.include_router(scheduler_router, prefix="/api/scheduler", tags=["scheduler"])
 
 # ─── 글로벌 예외 핸들러 ───────────────────────────────────────────
 @app.exception_handler(Exception)

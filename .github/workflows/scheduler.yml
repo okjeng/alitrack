@@ -1,0 +1,28 @@
+name: AliTrack 가격 수집 스케줄러
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # 6시간마다 (00:00 / 06:00 / 12:00 / 18:00 UTC)
+  workflow_dispatch:          # 수동 실행 버튼
+
+jobs:
+  run-scheduler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 가격 알림 확인 및 데이터 정리
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "https://api.alitrack.kr/api/scheduler/run" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 30)
+
+          echo "HTTP Status: $HTTP_CODE"
+          cat /tmp/response.json
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "스케줄러 실패: HTTP $HTTP_CODE"
+            exit 1
+          fi
