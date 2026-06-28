@@ -1779,6 +1779,106 @@ const PwaInstallBanner = ({ onInstall, onDismiss }) => (
 // ═══════════════════════════════════════════════════════════════════
 // ⑦ 빈 화면 Empty State (찜·가격기록·나의기록)
 // ═══════════════════════════════════════════════════════════════════
+// ─── 가격기록 = 로컬 알림 신청 목록 ─────────────────────────────────
+const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
+  const [alerts, setAlerts] = useState(getLocalAlerts);
+
+  const remove = (productId) => {
+    removeLocalAlert(productId);
+    setAlerts(getLocalAlerts());
+    showToast("알림이 삭제됐어요");
+  };
+
+  return (
+    <div>
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <p className="text-base font-bold text-gray-900">가격기록</p>
+        {alerts.length > 0 && <span className="ml-auto text-xs text-orange-500 font-bold">{alerts.length}개 모니터링 중</span>}
+      </div>
+
+      {alerts.length === 0 ? (
+        <EmptyPriceHistory onGoHome={onGoHome}/>
+      ) : (
+        <div className="px-4 py-4 space-y-3">
+          {alerts.map(a => (
+            <div key={a.product_id} className="bg-white border border-gray-100 rounded-2xl px-4 py-4 flex items-center gap-3 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-lg flex-shrink-0">🔔</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{a.product_name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  목표가 <span className="text-orange-500 font-extrabold">{fmt(a.target_price)}</span>
+                  {a.current_price ? ` · 신청 시 ${fmt(a.current_price)}` : ""}
+                </p>
+                {a.saved_at && (
+                  <p className="text-[10px] text-gray-300 mt-0.5">{new Date(a.saved_at).toLocaleDateString("ko-KR")} 신청</p>
+                )}
+              </div>
+              <button onClick={()=>remove(a.product_id)}
+                className="text-gray-300 hover:text-red-400 transition px-2 py-1 text-lg">✕</button>
+            </div>
+          ))}
+          <p className="text-[11px] text-gray-400 text-center pt-2">
+            이 기기에만 저장됩니다 · 카카오 가입 시 계정에 통합돼요
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── 찜한 상품 = 로컬 위시리스트 ────────────────────────────────────
+const LocalWishlistScreen = ({ onBack, onGoHome, onProduct, showToast }) => {
+  const [wish, setWish] = useState(getLocalWishlist);
+
+  const remove = (product) => {
+    toggleLocalWish(product);
+    setWish(getLocalWishlist());
+    showToast("관심상품에서 제거했어요");
+  };
+
+  return (
+    <div>
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <p className="text-base font-bold text-gray-900">찜한상품</p>
+        {wish.length > 0 && <span className="ml-auto text-xs text-orange-500 font-bold">{wish.length}개</span>}
+      </div>
+
+      {wish.length === 0 ? (
+        <EmptyWishlist onGoHome={onGoHome}/>
+      ) : (
+        <div className="px-4 py-4 space-y-3">
+          {wish.map(p => (
+            <div key={p.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex shadow-sm">
+              <button onClick={()=>onProduct(p)} className="flex-1 flex items-center gap-3 px-4 py-3 text-left">
+                {p.image ? (
+                  <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-50"/>
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🛍️</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight">{p.name}</p>
+                  {p.price && <p className="text-sm font-extrabold text-orange-500 mt-1">{fmt(p.price)}</p>}
+                </div>
+              </button>
+              <button onClick={()=>remove(p)}
+                className="px-4 text-gray-300 hover:text-red-400 transition text-lg border-l border-gray-50">❤️</button>
+            </div>
+          ))}
+          <p className="text-[11px] text-gray-400 text-center pt-2">
+            이 기기에만 저장됩니다 · 카카오 가입 시 계정에 통합돼요
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const EmptyWishlist = ({ onGoHome }) => (
   <div className="flex flex-col items-center justify-center py-24 px-8 text-center gap-4">
     <div className="w-24 h-24 rounded-3xl bg-[#F7F7F8] flex items-center justify-center text-4xl">❤️</div>
@@ -1807,51 +1907,113 @@ const EmptyPriceHistory = ({ onGoHome }) => (
   </div>
 );
 
-const EmptyMypage = ({ onLogin }) => (
-  <div className="flex flex-col items-center justify-center py-24 px-8 text-center gap-4">
-    <div className="w-24 h-24 rounded-3xl bg-[#F7F7F8] flex items-center justify-center text-4xl">👤</div>
-    <div>
-      <p className="text-base font-extrabold text-gray-900 mb-1">로그인이 필요해요</p>
-      <p className="text-xs text-gray-400 leading-relaxed">로그인하면 알림 설정,<br/>찜 목록을 한 곳에서 관리할 수 있어요</p>
-    </div>
-    <button onClick={onLogin}
-      className="mt-2 px-6 py-3 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition">
-      로그인 / 가입하기
-    </button>
-  </div>
-);
+// ─── 미회원 나의기록 (게스트 ID + 로컬 알림 현황 + Kakao 유도) ────
+const GuestMypage = ({ onLogin }) => {
+  const [guestId, setGuestId]   = useState(getGuestId);
+  const [editing, setEditing]   = useState(false);
+  const [draft, setDraft]       = useState(guestId);
+  const localAlerts = getLocalAlerts();
+  const localWish   = getLocalWishlist();
 
-const LoggedInMypage = ({ user, onLogout }) => {
-  const isKakao   = user?.provider === "kakao";
-  const tierLabel = isKakao ? "카카오 회원" : "일반 회원";
-  const tierColor = isKakao ? "#FEE500" : "#F7F7F8";
-  const tierText  = isKakao ? "#181600" : "#555";
-  const email     = user?.email || "";
-  const nick      = email.includes("@") ? email.split("@")[0] : email;
+  const saveId = () => {
+    const clean = draft.trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,12);
+    if (!clean) return;
+    try { localStorage.setItem("alitrack_guest_id", clean); } catch {}
+    setGuestId(clean);
+    setEditing(false);
+  };
 
   return (
     <div className="px-4 py-6 space-y-4">
-      {/* 프로필 카드 */}
+      {/* 게스트 ID 카드 */}
+      <div className="bg-[#F7F7F8] rounded-3xl p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">👤</div>
+          <div className="flex-1">
+            <p className="text-xs text-gray-400">나의 게스트 ID</p>
+            {editing ? (
+              <input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==="Enter" && saveId()}
+                className="text-base font-extrabold text-gray-900 bg-transparent outline-none border-b-2 border-orange-400 w-full" autoFocus />
+            ) : (
+              <p className="text-base font-extrabold text-gray-900">{guestId}</p>
+            )}
+          </div>
+          <button onClick={()=>{ if(editing) saveId(); else { setDraft(guestId); setEditing(true); }}}
+            className="text-xs text-orange-500 font-bold px-3 py-1.5 rounded-xl bg-orange-50 active:bg-orange-100">
+            {editing ? "저장" : "변경"}
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-400">이 기기에서만 유효 · 카카오 가입 시 데이터 이전 가능</p>
+      </div>
+
+      {/* 로컬 현황 */}
+      <div className="bg-white rounded-3xl border border-gray-100 divide-y divide-gray-50">
+        <div className="flex items-center gap-4 px-5 py-4">
+          <span className="text-xl">🔔</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-gray-900">알림 신청</p>
+            <p className="text-xs text-gray-400">{localAlerts.length > 0 ? `${localAlerts.length}개 상품 모니터링 중` : "아직 없어요"}</p>
+          </div>
+          <span className="text-sm font-extrabold text-orange-500">{localAlerts.length}</span>
+        </div>
+        <div className="flex items-center gap-4 px-5 py-4">
+          <span className="text-xl">❤️</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-gray-900">찜한 상품</p>
+            <p className="text-xs text-gray-400">{localWish.length > 0 ? `${localWish.length}개 저장됨` : "아직 없어요"}</p>
+          </div>
+          <span className="text-sm font-extrabold text-orange-500">{localWish.length}</span>
+        </div>
+      </div>
+
+      {/* Kakao 유도 */}
+      <div className="bg-[#FFFBEE] border border-yellow-200 rounded-3xl p-5">
+        <p className="text-sm font-extrabold text-gray-900 mb-1">💬 카카오로 시작하면</p>
+        <p className="text-xs text-gray-500 mb-3">소중한 기록이 안전하게 보관돼요</p>
+        <div className="space-y-1.5 mb-4">
+          {["📈 가격기록 영구 보관","❤️ 관심상품 영구 저장","🔄 기기 변경 시 데이터 연동","💬 카카오톡 알림 수신"].map(t=>(
+            <p key={t} className="text-[12px] text-gray-700">{t}</p>
+          ))}
+        </div>
+        <button onClick={onLogin}
+          className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2"
+          style={{background:"#FEE500",color:"#181600"}}>
+          <span>💬</span>카카오로 계속하기 →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── 로그인 나의기록 ─────────────────────────────────────────────────
+const EmptyMypage = ({ onLogin }) => <GuestMypage onLogin={onLogin}/>;
+
+const LoggedInMypage = ({ user, onLogout }) => {
+  const isKakao = user?.provider === "kakao";
+  const email   = user?.email || "";
+  const nick    = email.includes("@") ? email.split("@")[0] : email;
+
+  return (
+    <div className="px-4 py-6 space-y-4">
       <div className="bg-[#F7F7F8] rounded-3xl p-5 flex items-center gap-4">
         <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">
-          {isKakao ? "💬" : "📧"}
+          {isKakao ? "💬" : "👤"}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-extrabold text-gray-900 truncate">{nick}</p>
           <p className="text-xs text-gray-400 truncate">{email}</p>
           <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                style={{background:tierColor, color:tierText}}>
-            {isKakao ? "💬 " : "📧 "}{tierLabel}
+                style={{background: isKakao ? "#FEE500":"#F7F7F8", color: isKakao ? "#181600":"#555"}}>
+            {isKakao ? "💬 카카오 회원" : "👤 게스트"}
           </span>
         </div>
       </div>
 
-      {/* 기능 목록 */}
       <div className="bg-white rounded-3xl border border-gray-100 divide-y divide-gray-50">
         {[
-          { icon:"❤️", label:"찜한 상품", desc:"찜 목록 보기", badge:"준비 중" },
-          { icon:"🔔", label:"가격 알림", desc:"알림 설정 관리", badge:"준비 중" },
-          ...(isKakao ? [{ icon:"💬", label:"카카오톡 알림", desc:"카카오 메시지로 알림 수신", badge:"준비 중" }] : []),
+          { icon:"❤️", label:"찜한 상품", desc:"영구 저장됨" },
+          { icon:"🔔", label:"가격 알림", desc:"이메일 + 카카오 알림" },
+          ...(isKakao ? [{ icon:"💬", label:"카카오톡 알림", desc:"메시지로 최저가 알림 수신" }] : []),
         ].map(item => (
           <div key={item.label} className="flex items-center gap-4 px-5 py-4">
             <span className="text-xl">{item.icon}</span>
@@ -1859,12 +2021,11 @@ const LoggedInMypage = ({ user, onLogout }) => {
               <p className="text-sm font-bold text-gray-900">{item.label}</p>
               <p className="text-xs text-gray-400">{item.desc}</p>
             </div>
-            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">{item.badge}</span>
+            <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-bold">활성</span>
           </div>
         ))}
       </div>
 
-      {/* 로그아웃 */}
       <button onClick={onLogout}
         className="w-full py-3.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-500 active:bg-gray-50 transition">
         로그아웃
@@ -2063,10 +2224,7 @@ export default function App() {
 
   const handleNav = useCallback((id)=>{
     setActiveNav(id);
-    if(id==="home"){ goTo("home"); return; }
-    if(id==="more"){ goTo("more"); return; }
-    if(id==="history"){ goTo("history"); return; }  // 미회원도 가격기록 접근 가능
-    if(!user){ showLogin(); return; }               // 찜·나의기록은 로그인 필요
+    // 모든 탭 미회원도 접근 가능 (localStorage 기반으로 동작)
     goTo(id);
   },[goTo,showLogin,user]);
 
@@ -2113,28 +2271,8 @@ export default function App() {
       case "feed":     return selCat?<CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/>:null;
       case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/>:null;
       // ⑦ Empty State 적용
-      case "history":  return (
-        <div>
-          <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-            <button onClick={goBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            </button>
-            <p className="text-base font-bold text-gray-900">가격기록</p>
-          </div>
-          <EmptyPriceHistory onGoHome={goHome}/>
-        </div>
-      );
-      case "wishlist": return (
-        <div>
-          <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-            <button onClick={goBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            </button>
-            <p className="text-base font-bold text-gray-900">찜한상품</p>
-          </div>
-          <EmptyWishlist onGoHome={goHome}/>
-        </div>
-      );
+      case "history":  return <LocalAlertsScreen onBack={goBack} onGoHome={goHome} showToast={showToast}/>;
+      case "wishlist": return <LocalWishlistScreen onBack={goBack} onGoHome={goHome} onProduct={goProduct} showToast={showToast}/>;
       case "mypage":   return (
         <div>
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
