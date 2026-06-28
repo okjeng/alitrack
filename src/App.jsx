@@ -1275,151 +1275,121 @@ const extractKeyword = (name) => {
     .join(" ");
 };
 
-// 더미 셀러 데이터 생성 — API 연동 시 이 함수를 fetch로 교체
-const fetchSellerList = async (productName, currentPrice) => {
-  // TODO: API 연동 시 아래 주석 해제 후 더미 제거
-  // const keyword = extractKeyword(productName);
-  // const res = await fetch(`/api/ali/products?keyword=${encodeURIComponent(keyword)}&sort=price&size=5`);
-  // const data = await res.json();
-  // return data.products.filter(p => p.id !== currentProductId).slice(0, 4);
-
-  // 더미 셀러 데이터 (seed 기반 고정)
-  await new Promise(r => setTimeout(r, 400)); // API 딜레이 시뮬레이션
-  const seed = currentPrice;
-  const rng  = (n) => ((n * 1664525 + 1013904223) & 0xffffffff) >>> 0;
-  return [
-    {
-      id: "s1",
-      sellerName: "TopDeal Store",
-      price: Math.round(currentPrice * 0.91 / 100) * 100,
-      rating: 4.7,
-      reviews: rng(seed) % 3000 + 500,
-      deliveryDays: 5,
-      badge: "최저가",
-    },
-    {
-      id: "s2",
-      sellerName: "BestBuy Official",
-      price: Math.round(currentPrice * 0.96 / 100) * 100,
-      rating: 4.8,
-      reviews: rng(rng(seed)) % 5000 + 1000,
-      deliveryDays: 4,
-      badge: "공식판매",
-    },
-    {
-      id: "s3",
-      sellerName: "MegaSale Shop",
-      price: Math.round(currentPrice * 1.04 / 100) * 100,
-      rating: 4.5,
-      reviews: rng(rng(rng(seed))) % 2000 + 200,
-      deliveryDays: 6,
-      badge: null,
-    },
-  ].sort((a, b) => a.price - b.price);
+// 알리 유사 상품 최저가 3개 — 실제 API 호출
+const fetchSellerList = async (productName, productId) => {
+  const keyword = extractKeyword(productName);
+  if (!keyword) return [];
+  try {
+    const params = new URLSearchParams({ page: 1, size: 8, sort: "price_asc", keyword });
+    const res  = await fetch(`${API_BASE}/api/ali/products?${params}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.products || [])
+      .filter(p => String(p.id) !== String(productId))
+      .slice(0, 3)
+      .map(mapProduct);
+  } catch {
+    return [];
+  }
 };
 
 const SellerCompareCard = ({ product }) => {
-  const [sellers, setSellers]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchSellerList(product.name, product.price).then(data => {
-      if (!cancelled) { setSellers(data); setLoading(false); }
+    fetchSellerList(product.name, product.id).then(data => {
+      if (!cancelled) { setItems(data); setLoading(false); }
     });
     return () => { cancelled = true; };
-  }, [product.id, product.price]);
+  }, [product.id]);
 
-  const cheaperCount = sellers.filter(s => s.price < product.price).length;
-  const displayList  = expanded ? sellers : sellers.slice(0, 2);
+  const coupangKeyword = extractKeyword(product.name);
+  const coupangUrl     = buildCoupangUrl(coupangKeyword);
+  const cheaperCount   = items.filter(s => s.price < product.price).length;
 
   return (
-    <div className="bg-[#F7F7F8] rounded-3xl p-4">
+    <div className="bg-[#F7F7F8] rounded-3xl p-4 space-y-3">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold text-gray-800">🏪 알리 셀러 가격 비교</p>
+          <p className="text-sm font-bold text-gray-800">🔍 유사 상품 최저가 비교</p>
           {!loading && cheaperCount > 0 && (
-            <p className="text-xs text-orange-500 font-bold mt-0.5">
-              더 싸게 파는 셀러 {cheaperCount}개 발견!
-            </p>
+            <p className="text-xs text-orange-500 font-bold mt-0.5">알리에서 {cheaperCount}개 더 저렴한 옵션 발견!</p>
           )}
-          {!loading && cheaperCount === 0 && (
-            <p className="text-xs text-green-600 font-bold mt-0.5">
-              현재 최저가 셀러입니다 ✅
-            </p>
+          {!loading && cheaperCount === 0 && items.length > 0 && (
+            <p className="text-xs text-green-600 font-bold mt-0.5">현재 상품이 최저가 수준이에요 ✅</p>
           )}
         </div>
         <span className="text-[10px] text-gray-400 bg-white px-2 py-1 rounded-xl">
-          {loading ? "조회 중..." : `${sellers.length}개 셀러`}
+          {loading ? "검색 중..." : `알리 ${items.length}건`}
         </span>
       </div>
 
-      {/* 내 상품 기준 */}
-      <div className="flex items-center gap-3 bg-orange-50 rounded-2xl px-3 py-2.5 mb-2">
-        <span className="text-[10px] font-extrabold text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full flex-shrink-0">
-          현재
-        </span>
-        <p className="text-xs text-gray-700 font-semibold flex-1 line-clamp-1">{product.shortName}</p>
+      {/* 현재 상품 기준 */}
+      <div className="flex items-center gap-3 bg-orange-50 rounded-2xl px-3 py-2.5">
+        <img src={product.image} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+          onError={e => { e.currentTarget.src = "https://placehold.co/40x40/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror=null; }} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-extrabold text-orange-500">현재 보는 상품</p>
+          <p className="text-xs text-gray-700 font-semibold truncate">{product.shortName}</p>
+        </div>
         <p className="text-sm font-extrabold text-orange-500 flex-shrink-0">{fmt(product.price)}</p>
       </div>
 
-      {/* 셀러 목록 */}
+      {/* 알리 유사 최저가 3개 */}
       {loading ? (
         <div className="space-y-2">
-          {[1,2].map(i => (
-            <div key={i} className="h-12 bg-gray-200 rounded-2xl animate-pulse"/>
-          ))}
+          {[1,2,3].map(i => <div key={i} className="h-14 bg-gray-200 rounded-2xl animate-pulse"/>)}
         </div>
+      ) : items.length === 0 ? (
+        <p className="text-xs text-gray-400 text-center py-3">유사 상품을 찾지 못했어요</p>
       ) : (
         <div className="space-y-2">
-          {displayList.map((s, i) => {
+          {items.map((s, i) => {
             const isCheaper = s.price < product.price;
-            const diff      = product.price - s.price;
-            const url       = buildAffiliateUrl(s.id, s.affiliate_url);
+            const diff      = Math.abs(product.price - s.price);
             return (
-              <a key={s.id} href={url} target="_blank" rel="noopener noreferrer"
+              <a key={s.id} href={buildAffiliateUrl(s.id, s.affiliate_url)}
+                 target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-3 bg-white rounded-2xl px-3 py-2.5 active:opacity-75 transition">
+                <img src={s.image} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+                  onError={e => { e.currentTarget.src="https://placehold.co/40x40/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror=null; }} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="text-xs font-bold text-gray-800 truncate">{s.sellerName}</p>
-                    {s.badge && (
-                      <span className="text-[9px] font-extrabold text-white bg-blue-500 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                        {s.badge}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="text-[9px] font-extrabold text-white bg-gray-400 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      {i+1}위
+                    </span>
+                    {isCheaper && <span className="text-[9px] font-extrabold text-white bg-red-500 px-1.5 py-0.5 rounded-full">더 저렴</span>}
                   </div>
-                  <p className="text-[10px] text-gray-400">
-                    ⭐ {s.rating} · {s.reviews.toLocaleString()}리뷰 · {s.deliveryDays}일배송
-                  </p>
+                  <p className="text-xs text-gray-700 truncate">{s.shortName}</p>
+                  <p className="text-[10px] text-gray-400">⭐{s.rating > 0 ? s.rating : "-"} · {s.reviews.toLocaleString()}리뷰</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className={`text-sm font-extrabold ${isCheaper ? "text-red-500" : "text-gray-700"}`}>
-                    {fmt(s.price)}
+                  <p className={`text-sm font-extrabold ${isCheaper ? "text-red-500" : "text-gray-700"}`}>{fmt(s.price)}</p>
+                  <p className={`text-[10px] font-bold ${isCheaper ? "text-red-400" : "text-gray-400"}`}>
+                    {isCheaper ? `-${fmt(diff)}` : `+${fmt(diff)}`}
                   </p>
-                  {isCheaper && (
-                    <p className="text-[10px] text-red-400 font-bold">{fmt(diff)} 저렴</p>
-                  )}
-                  {!isCheaper && (
-                    <p className="text-[10px] text-gray-400">{fmt(s.price - product.price)} 비쌈</p>
-                  )}
                 </div>
-                <span className="text-gray-300 text-xs flex-shrink-0">›</span>
+                <span className="text-gray-300 text-xs">›</span>
               </a>
             );
           })}
         </div>
       )}
 
-      {/* 더보기 토글 */}
-      {!loading && sellers.length > 2 && (
-        <button onClick={() => setExpanded(e => !e)}
-          className="w-full mt-2 py-2 text-xs text-gray-400 font-semibold text-center">
-          {expanded ? "접기 ▲" : `셀러 ${sellers.length - 2}개 더 보기 ▼`}
-        </button>
-      )}
+      {/* 쿠팡 비교 링크 */}
+      <div className="border-t border-gray-200 pt-3">
+        <p className="text-[10px] text-gray-400 mb-2">국내 배송 비교 (쿠팡 가격은 직접 확인)</p>
+        <a href={coupangUrl} target="_blank" rel="noopener noreferrer sponsored"
+           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-extrabold active:opacity-90 transition"
+           style={{background:"linear-gradient(90deg,#C0392B,#E74C3C)"}}>
+          <span>🛒</span>
+          쿠팡에서 "{coupangKeyword}" 검색하기 →
+        </a>
+      </div>
     </div>
   );
 };
@@ -1625,11 +1595,8 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
           {/* ✅ [4] 가격 등락 타임라인 */}
           <PriceTimeline hist={hist} currentPrice={product.price} />
 
-          {/* ✅ [5] 알리 셀러 간 가격 비교 */}
+          {/* ✅ [5] 알리 유사 최저가 3개 + 쿠팡 비교 */}
           <SellerCompareCard product={product} />
-
-          {/* ✅ [6] 쿠팡 비교 링크 */}
-          <CoupangCompareCard productName={product.name} currentPrice={product.price} />
 
           <LegalFooter />
         </div>
