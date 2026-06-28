@@ -38,9 +38,33 @@ const PRODUCT_TEMPLATES = [
   { namePrefix:"Dreame 무선 청소기",    shortPrefix:"무선 청소기",     basePrice:178000, image:"https://placehold.co/320x320/F0FDF4/22C55E?text=🌀", tag:"긴급핫딜",   deliveryDays:5, rating:4.8 },
 ];
 
-const PAGE_SIZE = 10; // 한 번에 로드할 상품 수
+const PAGE_SIZE = 20;
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
+// API 응답 → 프론트 product 객체 변환
+const mapProduct = (p) => {
+  const disc = p.discount || 0;
+  const tag =
+    disc >= 50 ? "역대최저" :
+    disc >= 30 ? "핫딜" :
+    disc >= 20 ? "최저가근접" :
+    disc >= 10 ? "특가" : "핫딜";
+  return {
+    id:           String(p.id || ""),
+    name:         p.name || "",
+    shortName:    (p.name || "").split(/\s+/).slice(0, 3).join(" "),
+    price:        p.price || 0,
+    orig:         p.orig_price || p.price || 0,
+    discount:     disc,
+    image:        p.image || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
+    tag,
+    deliveryDays: p.delivery_days || 5,
+    rating:       p.rating || 0,
+    reviews:      p.reviews || 0,
+    affiliate_url:p.affiliate_url || "",
+  };
+};
 
 // ── 핵심: 더미 페이지 생성 함수 ──────────────────────────────────
 // API 연동 시 이 함수만 fetch('/api/products?page='+page) 로 교체
@@ -214,66 +238,67 @@ const generateHistory = (current, seed) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// ✅ 핵심 훅: useInfiniteProducts
-//    - API 연동 시 generateDummyPage → fetch 로만 바꾸면 됩니다
-//    - 실제 알리처럼 스크롤 끝에 닿을 때마다 다음 페이지 자동 로드
+// 핵심 훅: useInfiniteProducts — AliExpress API 연동
 // ═══════════════════════════════════════════════════════════════════
-const useInfiniteProducts = () => {
-  const [items, setItems]       = useState([]);
-  const [page, setPage]         = useState(0);
-  const [loading, setLoading]   = useState(false);
+const useInfiniteProducts = (keyword = "", sort = "default") => {
+  const [items, setItems]             = useState([]);
+  const [page, setPage]               = useState(0);
+  const [loading, setLoading]         = useState(false);
+  const [hasMore, setHasMore]         = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const loaderRef               = useRef(null);
-  const loadingRef              = useRef(false); // ref로도 관리해서 클로저 문제 방지
+  const loaderRef   = useRef(null);
+  const loadingRef  = useRef(false);
+  const hasMoreRef  = useRef(true);
 
   const fetchPage = useCallback(async (pageNum) => {
-    if (loadingRef.current) return;
+    if (loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
     setLoading(true);
     try {
-      // ── API 연동 시 아래 한 줄만 교체 ──
-      // const res = await fetch(`/api/products?page=${pageNum}&size=${PAGE_SIZE}`);
-      // const data = await res.json();
-      // const newItems = data.items;
-      const newItems = await generateDummyPage(pageNum);
-      // ────────────────────────────────────
-      setItems(prev => {
-        // 중복 id 방지
-        const existingIds = new Set(prev.map(p => p.id));
-        const unique = newItems.filter(p => !existingIds.has(p.id));
-        return [...prev, ...unique];
-      });
-      setPage(pageNum);
+      const params = new URLSearchParams({ page: pageNum, size: PAGE_SIZE, sort });
+      if (keyword) params.set("keyword", keyword);
+      const res  = await fetch(`${API_BASE}/api/ali/products?${params}`);
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      const newItems = (data.products || []).map(mapProduct);
+      if (newItems.length === 0) {
+        hasMoreRef.current = false;
+        setHasMore(false);
+      } else {
+        setItems(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const unique = newItems.filter(p => !existingIds.has(p.id));
+          return [...prev, ...unique];
+        });
+        setPage(pageNum);
+      }
+    } catch (e) {
+      console.error("상품 로드 실패:", e);
     } finally {
       loadingRef.current = false;
       setLoading(false);
       if (!initialized) setInitialized(true);
     }
-  }, [initialized]);
+  }, [initialized, keyword, sort]);
 
-  // 최초 1페이지 로드
-  useEffect(() => {
-    fetchPage(1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { fetchPage(1); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // IntersectionObserver — 로더 div가 보이면 다음 페이지 요청
   useEffect(() => {
     const el = loaderRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingRef.current) {
+        if (entries[0].isIntersecting && !loadingRef.current && hasMoreRef.current) {
           fetchPage(page + 1);
         }
       },
-      { threshold: 0.1, rootMargin: "200px" } // 200px 미리 감지해서 끊김 방지
+      { threshold: 0.1, rootMargin: "200px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [page, fetchPage]);
 
-  return { items, loading, initialized, loaderRef };
+  return { items, loading, initialized, loaderRef, hasMore };
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -394,8 +419,8 @@ const ProductCard = ({ product:p, onProduct }) => {
 // ═══════════════════════════════════════════════════════════════════
 // ✅ 무한 스크롤 상품 그리드 (공용) — 홈 / 카테고리 피드 공유
 // ═══════════════════════════════════════════════════════════════════
-const InfiniteProductGrid = ({ onProduct, title }) => {
-  const { items, loading, initialized, loaderRef } = useInfiniteProducts();
+const InfiniteProductGrid = ({ onProduct, title, keyword, sort }) => {
+  const { items, loading, initialized, loaderRef, hasMore } = useInfiniteProducts(keyword, sort);
 
   return (
     <div>
@@ -415,9 +440,12 @@ const InfiniteProductGrid = ({ onProduct, title }) => {
             {loading && <><SkeletonCard /><SkeletonCard /></>}
           </div>
 
-          {/* 로더 감지 영역 — 이 div가 뷰포트에 들어오면 다음 페이지 로드 */}
+          {/* 로더 감지 영역 */}
           <div ref={loaderRef}>
             {loading && <LoadingSpinner />}
+            {!hasMore && items.length > 0 && (
+              <p className="text-center text-xs text-gray-400 py-6">모든 상품을 불러왔습니다</p>
+            )}
           </div>
         </>
       )}
@@ -1505,7 +1533,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
 
         {/* 이미지 */}
         <div className="bg-[#F7F7F8]">
-          <img src={product.image.replace("320x320","500x500")} alt={product.shortName}
+          <img src={product.image} alt={product.shortName}
             loading="lazy" className="w-full max-h-72 object-contain mx-auto"
             onError={e => { e.currentTarget.src = "https://placehold.co/500x500/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror = null; }} />
         </div>
