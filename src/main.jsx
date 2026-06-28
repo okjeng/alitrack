@@ -3,6 +3,33 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// ─── 채널톡(Channel.io) 고객 채팅 초기화 ────────────────────────────
+// VITE_CHANNEL_PLUGIN_KEY 환경변수가 없으면 조용히 건너뜀
+;(function () {
+  const key = import.meta.env.VITE_CHANNEL_PLUGIN_KEY;
+  if (!key) return;
+  var w = window;
+  if (w.ChannelIO) return;
+  var ch = function () { ch.c(arguments); };
+  ch.q = []; ch.c = function (a) { ch.q.push(a); };
+  w.ChannelIO = ch;
+  function l() {
+    if (w.ChannelIOInitialized) return;
+    w.ChannelIOInitialized = true;
+    var s = document.createElement('script');
+    s.type = 'text/javascript'; s.async = true;
+    s.src = 'https://cdn.channel.io/plugin/ch-plugin-web.js';
+    document.head.appendChild(s);
+  }
+  if (document.readyState === 'complete') l();
+  else { w.addEventListener('DOMContentLoaded', l); w.addEventListener('load', l); }
+  w.ChannelIO('boot', {
+    pluginKey: key,
+    hideChannelButtonOnBoot: true, // 기본 플로팅 버튼 숨김 — MoreScreen 버튼으로 직접 열기
+    language: 'ko',
+  });
+})();
+
 // PWA: beforeinstallprompt 캡처 — 브라우저가 설치 가능 조건 충족 시 발생
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();

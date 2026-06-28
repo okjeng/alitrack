@@ -2507,11 +2507,25 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, on
         <div>
           <p className="text-xs font-bold text-gray-400 px-1 mb-2">고객 지원</p>
           <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
-            <button onClick={()=>showToast("AliTrack: 상품 검색 → 상세 → 알림 신청 순으로 이용하세요 😊")}
+            <button
+              onClick={() => {
+                if (window.ChannelIO) {
+                  window.ChannelIO('openChat');
+                } else {
+                  showToast("채팅 기능을 불러오는 중이에요. 잠시 후 다시 눌러주세요.");
+                }
+              }}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
-              <span className="text-lg">📖</span>
-              <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알리트랙 사용법</span>
-              <span className="text-gray-400 text-xs">›</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div className="flex-1 text-left">
+                <span className="block text-sm font-semibold text-gray-800">1:1 AI 고객상담</span>
+                <span className="text-[10px] text-gray-400">궁금한 점을 바로 물어보세요</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-50 rounded-full px-2 py-0.5">AI</span>
             </button>
             <button onClick={()=>setShowWithdraw(true)}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
