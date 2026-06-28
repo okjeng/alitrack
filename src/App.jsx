@@ -104,14 +104,14 @@ const generateDummyPage = (page) => {
 // 기타 더미 데이터
 // ═══════════════════════════════════════════════════════════════════
 const CATEGORIES = [
-  { id:"domestic",  icon:"🏠", label:"한국배송" },
-  { id:"cheap",     icon:"💸", label:"초저가템" },
-  { id:"popular",   icon:"🏆", label:"인기랭킹" },
-  { id:"reviewed",  icon:"⭐", label:"리뷰많은" },
-  { id:"limited",   icon:"⚡", label:"한정특가" },
-  { id:"value",     icon:"💎", label:"실속상품" },
-  { id:"monthly",   icon:"🗓️", label:"월간옵션" },
-  { id:"freeship",  icon:"🚚", label:"무료배송" },
+  { id:"domestic",  icon:"🏠", label:"한국배송",  keyword:"fast shipping korea warehouse",  sort:"default"    },
+  { id:"cheap",     icon:"💸", label:"초저가템",  keyword:"cheap under 5 dollar",           sort:"price_asc"  },
+  { id:"popular",   icon:"🏆", label:"인기랭킹",  keyword:"best seller popular trending",    sort:"default"    },
+  { id:"reviewed",  icon:"⭐", label:"리뷰많은",  keyword:"top rated highly reviewed",       sort:"default"    },
+  { id:"limited",   icon:"⚡", label:"한정특가",  keyword:"flash sale limited time deal",    sort:"discount"   },
+  { id:"value",     icon:"💎", label:"실속상품",  keyword:"value quality everyday",          sort:"discount"   },
+  { id:"monthly",   icon:"🗓️", label:"월간옵션", keyword:"new arrival this month",          sort:"default"    },
+  { id:"freeship",  icon:"🚚", label:"무료배송",  keyword:"free shipping worldwide",         sort:"default"    },
 ];
 
 const daysFromNow = (days) => {
@@ -128,11 +128,11 @@ const DISCOUNT_CODES = [
 ];
 
 const PROMO_BANNERS = [
-  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🎊 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"] },
-  { id:"b2", title:"공식 브랜드 위크",     sub:"샤오미·안커·바세우스 특가", badge:"🏷 브랜드위크", bg:"linear-gradient(135deg,#6366F1,#8B5CF6)",  products:["노트북","이어폰","스마트홈"] },
-  { id:"b3", title:"플래시 딜 3시간",      sub:"오늘만 이 가격!",           badge:"⚡ 긴급",       bg:"linear-gradient(135deg,#0EA5E9,#6366F1)",  products:["케이블","보조배터리","거치대"] },
-  { id:"b4", title:"무료배송 페스티벌",    sub:"전품목 무료배송 이벤트",    badge:"🚚 무배축제",   bg:"linear-gradient(135deg,#10B981,#0EA5E9)",  products:["생활용품","뷰티","주방"] },
-  { id:"b5", title:"5일 특급 배송전",      sub:"5일 내 도착 보장 상품만",   badge:"🚀 5일배송",    bg:"linear-gradient(135deg,#F59E0B,#EF4444)",  products:["전자제품","패션","홈데코"] },
+  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🎊 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"], keyword:"smartwatch earbuds electronics",  sort:"discount"  },
+  { id:"b2", title:"공식 브랜드 위크",     sub:"샤오미·안커·바세우스 특가", badge:"🏷 브랜드위크", bg:"linear-gradient(135deg,#6366F1,#8B5CF6)",  products:["노트북","이어폰","스마트홈"],        keyword:"xiaomi anker laptop earphone",    sort:"default"   },
+  { id:"b3", title:"플래시 딜 3시간",      sub:"오늘만 이 가격!",           badge:"⚡ 긴급",       bg:"linear-gradient(135deg,#0EA5E9,#6366F1)",  products:["케이블","보조배터리","거치대"],      keyword:"phone cable power bank holder",   sort:"discount"  },
+  { id:"b4", title:"무료배송 페스티벌",    sub:"전품목 무료배송 이벤트",    badge:"🚚 무배축제",   bg:"linear-gradient(135deg,#10B981,#0EA5E9)",  products:["생활용품","뷰티","주방"],            keyword:"home kitchen beauty free ship",   sort:"default"   },
+  { id:"b5", title:"5일 특급 배송전",      sub:"5일 내 도착 보장 상품만",   badge:"🚀 5일배송",    bg:"linear-gradient(135deg,#F59E0B,#EF4444)",  products:["전자제품","패션","홈데코"],          keyword:"fast delivery electronics fashion", sort:"default" },
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -407,6 +407,7 @@ const ProductCard = ({ product:p, onProduct }) => {
             ? <span className="text-[11px] font-bold text-red-500">▲ {Math.abs(p.discount)}%</span>
             : null}
         </div>
+        <p className="text-[9px] text-gray-400 leading-tight">*API 참고가 · 실제가 다를 수 있음</p>
         {diff > 0
           ? <p className="text-[10px] text-orange-500 font-semibold leading-tight">평균 대비 {fmt(Math.round(diff/100)*100)} 저렴!</p>
           : <p className="text-[10px] text-blue-500 font-semibold">현재 최저가 근접 중</p>
@@ -823,8 +824,9 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
       {tab==="hotdeal" ? (
         <>
           {/* 다크 배너 */}
-          <div className="rounded-3xl p-5 text-white"
-               style={{background:"linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%)"}}>
+          <div className="rounded-3xl p-5 text-white cursor-pointer active:opacity-80 transition"
+               style={{background:"linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%)"}}
+               onClick={()=>document.getElementById('hot-products-section')?.scrollIntoView({behavior:'smooth'})}>
             <p className="text-xs text-blue-300 font-semibold mb-1 tracking-widest uppercase">AliTrack · 가성비 분석</p>
             <p className="text-lg font-extrabold leading-snug">알리 직구 타이밍의 시간,<br/>찐 가성비 러버가 되어볼까? 🚀</p>
             <p className="text-xs text-blue-200 mt-2">지금 바로 핫딜 확인하기 →</p>
@@ -855,9 +857,10 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
           </div>
 
           {/* 슬라이드 배너 */}
-          <div className="rounded-3xl overflow-hidden"
+          <div className="rounded-3xl overflow-hidden cursor-pointer"
                onMouseEnter={()=>{isPaused.current=true;}} onMouseLeave={()=>{isPaused.current=false;}}
-               onTouchStart={()=>{isPaused.current=true;}} onTouchEnd={()=>{isPaused.current=false;}}>
+               onTouchStart={()=>{isPaused.current=true;}} onTouchEnd={()=>{isPaused.current=false;}}
+               onClick={()=>onCategory({id:b.id, icon:b.badge.charAt(0), label:b.title, keyword:b.keyword, sort:b.sort})}>
             <div style={{background:b.bg, transition:"background 0.5s"}}>
               <div className="p-5 text-white">
                 <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">{b.badge}</span>
@@ -873,7 +876,7 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
                 <span className="text-white text-xs">👆 지금 바로 확인하기</span>
                 <div className="flex gap-1.5 items-center">
                   {PROMO_BANNERS.map((_,i)=>(
-                    <button key={i} onClick={()=>setBannerIdx(i)}
+                    <button key={i} onClick={(e)=>{e.stopPropagation();setBannerIdx(i);}}
                       className={`rounded-full transition-all duration-300 ${i===bannerIdx?"w-4 h-1.5 bg-white":"w-1.5 h-1.5 bg-white/40"}`}/>
                   ))}
                 </div>
@@ -938,7 +941,7 @@ const CategoryFeedScreen = ({ cat, onBack, onProduct }) => {
             {Array(6).fill(0).map((_,i)=><SkeletonCard key={i}/>)}
           </div>
         ) : (
-          <InfiniteProductGrid onProduct={onProduct} />
+          <InfiniteProductGrid onProduct={onProduct} keyword={cat.keyword||""} sort={cat.sort||"default"} />
         )}
         <LegalFooter />
       </div>
