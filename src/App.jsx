@@ -2362,8 +2362,66 @@ const NotificationSettingsSheet = ({ onClose }) => {
   );
 };
 
+// ─── iOS PWA 설치 안내 모달 ───────────────────────────────────────────
+const IosInstallGuide = ({ onClose }) => (
+  <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={onClose}>
+    <div className="absolute inset-0 bg-black/50" />
+    <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
+         style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 28px)" }}
+         onClick={e => e.stopPropagation()}>
+      <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <circle cx="12" cy="17" r="1" fill="#FF5A1F"/>
+          </svg>
+        </div>
+        <p className="text-lg font-extrabold text-gray-900">AliTrack 앱 설치</p>
+        <p className="text-xs text-gray-400 mt-1">Safari에서 홈 화면에 추가하세요</p>
+      </div>
+      <div className="space-y-3 mb-6">
+        {[
+          { n: 1, icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          ), text: "화면 하단의 공유 버튼을 탭해요" },
+          { n: 2, icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          ), text: "'홈 화면에 추가'를 선택해요" },
+          { n: 3, icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          ), text: "오른쪽 상단 '추가'를 탭하면 완료!" },
+        ].map(({ n, icon, text }) => (
+          <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3">
+            <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">
+              {n}
+            </div>
+            <div className="text-gray-500 flex-shrink-0">{icon}</div>
+            <p className="text-sm font-semibold text-gray-800">{text}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-orange-50 rounded-2xl px-4 py-3 mb-5">
+        <p className="text-xs text-orange-700 text-center">
+          💡 Safari 브라우저에서만 홈 화면 추가가 가능해요
+        </p>
+      </div>
+      <button onClick={onClose}
+        className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
+        확인
+      </button>
+    </div>
+  </div>
+);
+
 // ─── 더보기 화면 ─────────────────────────────────────────────────────
-const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, showToast, onInstall }) => {
+const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, showToast, onInstall, showInstallMenu }) => {
   const [showNotif, setShowNotif] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
@@ -2419,15 +2477,23 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, s
               <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
               <span className="text-gray-400 text-xs">›</span>
             </button>
-            <button onClick={onInstall}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
-              <span className="text-lg">📲</span>
-              <div className="flex-1 text-left">
-                <span className="block text-sm font-semibold text-gray-800">앱 설치하고 더 빠르게 사용하기</span>
-                <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 실행</span>
-              </div>
-              <span className="text-gray-400 text-xs">›</span>
-            </button>
+            {showInstallMenu && (
+              <button onClick={onInstall}
+                className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="block text-sm font-semibold text-gray-800">AliTrack 전용 앱 설치</span>
+                  <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 빠르게 실행</span>
+                </div>
+                <span className="text-gray-400 text-xs">›</span>
+              </button>
+            )}
             <button onClick={clearCache}
               className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition">
               <span className="text-lg">🗑️</span>
@@ -2537,13 +2603,25 @@ export default function App() {
     catch { return false; }
   });
 
-  // ⑥ PWA 설치 배너
-  const [showPwaBanner, setShowPwaBanner] = useState(false);
-  useEffect(()=>{
-    const handler = () => { setShowPwaBanner(true); };
-    window.addEventListener("pwa-installable", handler);
-    return () => window.removeEventListener("pwa-installable", handler);
-  },[]);
+  // ⑥ PWA 설치 상태
+  const [pwaInstallable, setPwaInstallable] = useState(() => !!window.__pwa);
+  const [showIosGuide, setShowIosGuide]     = useState(false);
+  const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+                    || !!window.navigator.standalone;
+  // 설치 메뉴 표시 조건: 이미 설치됨(standalone)이 아니고, 설치 가능하거나 iOS인 경우
+  const showInstallMenu = !isStandalone && (pwaInstallable || isIOS);
+
+  useEffect(() => {
+    const onInstallable = () => setPwaInstallable(true);
+    const onInstalled   = () => setPwaInstallable(false);
+    window.addEventListener("pwa-installable", onInstallable);
+    window.addEventListener("pwa-installed",   onInstalled);
+    return () => {
+      window.removeEventListener("pwa-installable", onInstallable);
+      window.removeEventListener("pwa-installed",   onInstalled);
+    };
+  }, []);
 
   // 앱 시작 시 저장된 토큰으로 로그인 상태 복원
   useEffect(() => {
@@ -2662,23 +2740,24 @@ export default function App() {
 
   // PWA 설치
   const handlePwaInstall = async () => {
-    // 이미 설치된 경우 (standalone 모드)
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    if (isStandalone) {
       showToast("이미 앱으로 설치되어 있어요 ✅");
+      return;
+    }
+    if (isIOS) {
+      setShowIosGuide(true);
       return;
     }
     if (window.__pwa?.install) {
       const accepted = await window.__pwa.install();
-      if (accepted) showToast("홈 화면에 추가되었습니다! 🎉");
-      setShowPwaBanner(false);
-    } else {
-      // iOS Safari 또는 설치 불가 환경 안내
-      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      if (isIOS) {
-        showToast("Safari 하단 공유 버튼 → '홈 화면에 추가' 를 눌러주세요 📱");
+      setPwaInstallable(false);
+      if (accepted) {
+        showToast("앱 설치가 시작되었습니다 🎉");
       } else {
-        showToast("브라우저 주소창 오른쪽 설치 아이콘을 클릭하거나 메뉴에서 '앱 설치'를 선택해주세요");
+        showToast("설치가 취소되었습니다");
       }
+    } else {
+      showToast("이미 설치되어 있거나 현재 환경에서 지원하지 않습니다");
     }
   };
 
@@ -2700,7 +2779,7 @@ export default function App() {
           {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
-      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={handlePwaInstall}/>;
+      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={handlePwaInstall} showInstallMenu={showInstallMenu}/>;
       // 법적 페이지
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
@@ -2784,6 +2863,9 @@ export default function App() {
 
       {/* 알림 설정 시트 */}
       {showNotifSettings && <NotificationSettingsSheet onClose={()=>setShowNotifSettings(false)}/>}
+
+      {/* iOS PWA 설치 안내 */}
+      {showIosGuide && <IosInstallGuide onClose={()=>setShowIosGuide(false)}/>}
 
       {/* 이메일 로그인/가입 모달 */}
       {loginModal && <EmailAuthModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
