@@ -21,14 +21,15 @@ from src.config.settings import settings
 logger = logging.getLogger("alitrack.auth")
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, provider: str = "") -> str:
     """Access Token 생성 (짧은 만료: 1시간)"""
     payload = {
-        "sub":   user_id,
-        "email": email,
-        "type":  "access",
-        "iat":   datetime.now(timezone.utc),
-        "exp":   datetime.now(timezone.utc) + timedelta(hours=1),
+        "sub":      user_id,
+        "email":    email,
+        "provider": provider,
+        "type":     "access",
+        "iat":      datetime.now(timezone.utc),
+        "exp":      datetime.now(timezone.utc) + timedelta(hours=1),
     }
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 

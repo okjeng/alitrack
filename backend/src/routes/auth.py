@@ -12,10 +12,12 @@ src/routes/auth.py — 소셜 로그인 (카카오 / 네이버 / 구글)
 import secrets
 import httpx
 import logging
+import re
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 from fastapi import APIRouter, HTTPException, Response, Query, Cookie, Request
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, EmailStr
 
 from src.config.settings import settings
 from src.utils.auth import create_access_token, create_refresh_token, verify_access_token
@@ -71,9 +73,8 @@ async def _upsert_user(provider: str, provider_id: str, email: str,
     return provider_id
 
 
-def _success_redirect(response: Response, user_id: str, email: str) -> RedirectResponse:
-    # JWT를 해시 프래그먼트로 전달 — URL 로그에 남지 않고 서버로 전송되지 않음
-    at = create_access_token(user_id, email)
+def _success_redirect(response: Response, user_id: str, email: str, provider: str = "") -> RedirectResponse:
+    at = create_access_token(user_id, email, provider)
     resp = RedirectResponse(url=f"{settings.FRONTEND_URL}#tok={at}")
     resp.delete_cookie("oauth_state")
     return resp
@@ -84,7 +85,6 @@ def _success_redirect(response: Response, user_id: str, email: str) -> RedirectR
 async def get_me(request: Request):
     token = request.cookies.get("alitrack_token")
     if not token:
-        # Authorization: Bearer <token> 헤더 허용 (개발 편의)
         auth = request.headers.get("Authorization", "")
         if auth.startswith("Bearer "):
             token = auth[7:]
@@ -92,7 +92,12 @@ async def get_me(request: Request):
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     try:
         payload = verify_access_token(token)
-        return {"user_id": payload["sub"], "email": payload.get("email"), "logged_in": True}
+        return {
+            "user_id":  payload["sub"],
+            "email":    payload.get("email"),
+            "provider": payload.get("provider", ""),
+            "logged_in": True,
+        }
     except Exception:
         raise HTTPException(status_code=401, detail="인증이 만료되었습니다.")
 
@@ -163,7 +168,7 @@ async def kakao_callback(
     avatar      = profile.get("profile_image_url", "")
 
     user_id = await _upsert_user("kakao", provider_id, email, nickname, avatar)
-    return _success_redirect(Response(), user_id, email)
+    return _success_redirect(Response(), user_id, email, "kakao")
 
 
 # ─── 네이버 ─────────────────────────────────────────────────────────
@@ -217,7 +222,7 @@ async def naver_callback(
     avatar      = ud.get("profile_image", "")
 
     user_id = await _upsert_user("naver", provider_id, email, nickname, avatar)
-    return _success_redirect(Response(), user_id, email)
+    return _success_redirect(Response(), user_id, email, "naver")
 
 
 # ─── 구글 ─────────────────────────────────────────────────────────
@@ -272,7 +277,7 @@ async def google_callback(
     avatar      = ud.get("picture", "")
 
     user_id = await _upsert_user("google", provider_id, email, nickname, avatar)
-    return _success_redirect(Response(), user_id, email)
+    return _success_redirect(Response(), user_id, email, "google")
 
 
 # ─── 로그아웃 ────────────────────────────────────────────────────────
@@ -300,3 +305,80 @@ async def refresh_token(response: Response, alitrack_refresh: str | None = Cooki
         return {"ok": True}
     except Exception:
         raise HTTPException(status_code=401, detail="인증이 만료되었습니다. 다시 로그인해주세요.")
+
+
+# ─── 이메일 회원가입 / 로그인 ───────────────────────────────────────
+class EmailAuthBody(BaseModel):
+    email:    str
+    password: str
+
+
+def _validate_email(email: str) -> bool:
+    return bool(re.match(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$", email))
+
+
+def _hash_pw(password: str) -> str:
+    from passlib.hash import bcrypt
+    return bcrypt.hash(password)
+
+
+def _verify_pw(plain: str, hashed: str) -> bool:
+    from passlib.hash import bcrypt
+    try:
+        return bcrypt.verify(plain, hashed)
+    except Exception:
+        return False
+
+
+@router.post("/email/register")
+async def email_register(body: EmailAuthBody):
+    """이메일 + 비밀번호 회원가입"""
+    if not _validate_email(body.email):
+        raise HTTPException(status_code=400, detail="유효하지 않은 이메일 형식입니다.")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상이어야 합니다.")
+
+    # 중복 이메일 확인
+    existing = await sb_select("users", filters={"email": f"eq.{body.email}", "provider": "eq.email"}, limit=1)
+    if existing:
+        raise HTTPException(status_code=409, detail="이미 가입된 이메일입니다. 로그인해주세요.")
+
+    password_hash = _hash_pw(body.password)
+    provider_id   = secrets.token_hex(16)
+
+    try:
+        rows = await sb_upsert("users", {
+            "provider":      "email",
+            "provider_id":   provider_id,
+            "email":         body.email,
+            "nickname":      body.email.split("@")[0],
+            "profile_image": "",
+            "last_login":    datetime.now(timezone.utc).isoformat(),
+            "password_hash": password_hash,
+        })
+        user_id = rows[0].get("id", provider_id) if rows else provider_id
+    except Exception as e:
+        logger.error(f"이메일 가입 오류: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="회원가입에 실패했습니다.")
+
+    token = create_access_token(user_id, body.email, "email")
+    return {"ok": True, "token": token, "email": body.email, "provider": "email"}
+
+
+@router.post("/email/login")
+async def email_login(body: EmailAuthBody):
+    """이메일 + 비밀번호 로그인"""
+    if not _validate_email(body.email):
+        raise HTTPException(status_code=400, detail="유효하지 않은 이메일 형식입니다.")
+
+    rows = await sb_select("users", filters={"email": f"eq.{body.email}", "provider": "eq.email"}, limit=1)
+    if not rows:
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+
+    user = rows[0]
+    if not _verify_pw(body.password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+
+    user_id = user.get("id", "")
+    token   = create_access_token(user_id, body.email, "email")
+    return {"ok": True, "token": token, "email": body.email, "provider": "email"}

@@ -387,18 +387,41 @@ const BottomNav = ({ active, onNav }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// 모달: 로그인
+// 모달: 로그인 (카카오 회원 / 이메일 일반 회원)
 // ═══════════════════════════════════════════════════════════════════
-const SOCIAL_PROVIDERS = [
-  { key:"kakao",  label:"카카오톡으로 계속하기", bg:"#FEE500", text:"#181600", icon:"💬" },
-  { key:"naver",  label:"네이버로 계속하기",     bg:"#03C75A", text:"#fff",    icon:"N",  fw:true },
-  { key:"google", label:"구글로 계속하기",       bg:"#fff",    text:"#444",    icon:"G",  fw:true, border:true },
-];
+const LoginModal = ({ onDismiss, onLoginSuccess }) => {
+  const [view, setView]         = useState("main");   // "main" | "email-login" | "email-signup"
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [err, setErr]           = useState("");
 
-const LoginModal = ({ onDismiss }) => {
-  const handleSocial = (key) => {
-    window.location.href = `${API_BASE}/api/auth/${key}/login`;
+  const handleKakao = () => { window.location.href = `${API_BASE}/api/auth/kakao/login`; };
+
+  const handleEmailSubmit = async (isSignup) => {
+    setErr("");
+    if (!email || !password) { setErr("이메일과 비밀번호를 입력해주세요."); return; }
+    if (isSignup && password.length < 8) { setErr("비밀번호는 8자 이상이어야 합니다."); return; }
+    setLoading(true);
+    try {
+      const endpoint = isSignup ? "register" : "login";
+      const res = await fetch(`${API_BASE}/api/auth/email/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.detail || "오류가 발생했습니다."); return; }
+      try { sessionStorage.setItem("ali_token", data.token); } catch {}
+      onLoginSuccess?.(data);
+      onDismiss();
+    } catch {
+      setErr("네트워크 오류. 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onDismiss}>
       <div className="absolute inset-0 bg-black/40" />
@@ -406,32 +429,81 @@ const LoginModal = ({ onDismiss }) => {
            style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)"}}
            onClick={e=>e.stopPropagation()}>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
-        <p className="text-xl font-extrabold text-gray-900 text-center">3초 만에 가입하고</p>
-        <p className="text-xl font-extrabold text-orange-500 text-center mb-1">최저가 알림 받기 🔔</p>
-        <p className="text-xs text-gray-400 text-center mb-7">간편 로그인으로 가입 즉시 이용 가능</p>
-        <div className="space-y-3">
-          {SOCIAL_PROVIDERS.map(b => (
-            <button key={b.key} onClick={() => handleSocial(b.key)}
-              className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold transition active:scale-95 ${b.border ? "border border-gray-200 shadow-sm" : ""}`}
-              style={{background: b.bg, color: b.text}}>
-              <span className={b.fw ? "font-extrabold text-base" : "text-lg"}>{b.icon}</span>
-              {b.label}
+
+        {view === "main" && (
+          <>
+            <p className="text-xl font-extrabold text-gray-900 text-center">가입하고</p>
+            <p className="text-xl font-extrabold text-orange-500 text-center mb-1">최저가 알림 받기 🔔</p>
+            <div className="mt-4 mb-5 bg-[#FFFBF0] rounded-2xl p-3 text-xs text-gray-600 space-y-1">
+              <div className="flex items-center gap-2"><span className="text-yellow-500 font-bold">💬 카카오 회원</span><span className="ml-auto text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">추천</span></div>
+              <p className="text-[11px] text-gray-500 pl-1">찜·가격알림·카카오톡 동시 알림·카카오 공유</p>
+              <div className="border-t border-yellow-100 mt-2 pt-2 flex items-center gap-2"><span className="text-gray-500 font-bold">📧 일반 회원</span></div>
+              <p className="text-[11px] text-gray-500 pl-1">찜·가격알림 (푸시 알림)</p>
+            </div>
+            <button onClick={handleKakao}
+              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-sm font-bold transition active:scale-95 mb-3"
+              style={{background:"#FEE500", color:"#181600"}}>
+              <span className="text-lg">💬</span>카카오로 1초 가입 (추천)
             </button>
-          ))}
-        </div>
-        <button onClick={onDismiss} className="w-full mt-4 py-2 text-xs text-gray-400">나중에 하기</button>
+            <button onClick={()=>{setView("email-login");setErr("");}}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-gray-600 bg-gray-50 active:bg-gray-100 transition mb-1">
+              <span>📧</span>이메일로 가입 / 로그인
+            </button>
+            <button onClick={onDismiss} className="w-full mt-3 py-2 text-xs text-gray-400">나중에 하기</button>
+          </>
+        )}
+
+        {(view === "email-login" || view === "email-signup") && (
+          <>
+            <button onClick={()=>setView("main")} className="mb-4 flex items-center gap-1 text-sm text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              돌아가기
+            </button>
+            <p className="text-lg font-extrabold text-gray-900 mb-5">
+              {view === "email-signup" ? "이메일로 가입하기" : "이메일로 로그인"}
+            </p>
+            <input type="email" placeholder="이메일 주소" value={email} onChange={e=>setEmail(e.target.value)}
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm mb-3 outline-none focus:border-orange-400 transition"/>
+            <input type="password" placeholder={view==="email-signup" ? "비밀번호 (8자 이상)" : "비밀번호"} value={password} onChange={e=>setPassword(e.target.value)}
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm mb-3 outline-none focus:border-orange-400 transition"
+              onKeyDown={e=>e.key==="Enter" && handleEmailSubmit(view==="email-signup")}/>
+            {err && <p className="text-xs text-red-500 mb-3 px-1">{err}</p>}
+            <button onClick={()=>handleEmailSubmit(view==="email-signup")} disabled={loading}
+              className="w-full py-4 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition disabled:opacity-60 mb-3">
+              {loading ? "처리 중..." : view==="email-signup" ? "가입하기" : "로그인"}
+            </button>
+            <button onClick={()=>setView(view==="email-signup" ? "email-login" : "email-signup")}
+              className="w-full py-2 text-xs text-gray-400">
+              {view==="email-signup" ? "이미 계정이 있나요? 로그인" : "계정이 없나요? 가입하기"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 // 모달: 공유
-const ShareSheet = ({ product, onClose, showToast }) => {
+const ShareSheet = ({ product, onClose, showToast, user }) => {
+  const url  = `https://alitrack.kr/p/${product.id}`;
+  const text = encodeURIComponent(`[AliTrack] ${product.name}\n${url}`);
+
   const copy = async () => {
-    try { await copyToClipboard(`https://alitrack.kr/p/${product.id}`); showToast("링크가 복사되었습니다!"); }
+    try { await copyToClipboard(url); showToast("링크가 복사되었습니다!"); }
     catch { showToast("복사 실패. 다시 시도해주세요."); }
     onClose();
   };
+  const shareKakao = () => {
+    window.open(`https://sharer.kakao.com/talk/friends/picker/link?app_key=&url=${encodeURIComponent(url)}`, "_blank");
+    onClose();
+  };
+  const shareSms = () => {
+    window.location.href = `sms:?body=${text}`;
+    onClose();
+  };
+
+  const isKakao = user?.provider === "kakao";
+
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
@@ -440,13 +512,17 @@ const ShareSheet = ({ product, onClose, showToast }) => {
            onClick={e=>e.stopPropagation()}>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
         <p className="text-sm font-bold text-gray-900 mb-4">공유하기</p>
-        {[{label:"카카오톡으로 공유",icon:"💬",action:onClose},{label:"문자로 보내기",icon:"📱",action:onClose},{label:"링크 복사하기",icon:"🔗",action:copy}]
-          .map(i=>(
-            <button key={i.label} onClick={i.action}
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 transition text-sm font-semibold text-gray-800 mb-2">
-              <span className="text-xl">{i.icon}</span>{i.label}
-            </button>
-          ))}
+        {[
+          ...(isKakao ? [{label:"카카오톡으로 공유",icon:"💬",action:shareKakao,badge:"카카오 회원"}] : []),
+          {label:"문자로 보내기",icon:"📱",action:shareSms},
+          {label:"링크 복사하기",icon:"🔗",action:copy},
+        ].map(i=>(
+          <button key={i.label} onClick={i.action}
+            className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 transition text-sm font-semibold text-gray-800 mb-2">
+            <span className="text-xl">{i.icon}</span>{i.label}
+            {i.badge && <span className="ml-auto text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">{i.badge}</span>}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -1675,14 +1751,66 @@ const EmptyMypage = ({ onLogin }) => (
     <div className="w-24 h-24 rounded-3xl bg-[#F7F7F8] flex items-center justify-center text-4xl">👤</div>
     <div>
       <p className="text-base font-extrabold text-gray-900 mb-1">로그인이 필요해요</p>
-      <p className="text-xs text-gray-400 leading-relaxed">로그인하면 구매 내역, 알림 설정,<br/>찜 목록을 한 곳에서 관리할 수 있어요</p>
+      <p className="text-xs text-gray-400 leading-relaxed">로그인하면 알림 설정,<br/>찜 목록을 한 곳에서 관리할 수 있어요</p>
     </div>
     <button onClick={onLogin}
       className="mt-2 px-6 py-3 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition">
-      3초 만에 로그인하기
+      로그인 / 가입하기
     </button>
   </div>
 );
+
+const LoggedInMypage = ({ user, onLogout }) => {
+  const isKakao   = user?.provider === "kakao";
+  const tierLabel = isKakao ? "카카오 회원" : "일반 회원";
+  const tierColor = isKakao ? "#FEE500" : "#F7F7F8";
+  const tierText  = isKakao ? "#181600" : "#555";
+  const email     = user?.email || "";
+  const nick      = email.includes("@") ? email.split("@")[0] : email;
+
+  return (
+    <div className="px-4 py-6 space-y-4">
+      {/* 프로필 카드 */}
+      <div className="bg-[#F7F7F8] rounded-3xl p-5 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">
+          {isKakao ? "💬" : "📧"}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-extrabold text-gray-900 truncate">{nick}</p>
+          <p className="text-xs text-gray-400 truncate">{email}</p>
+          <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                style={{background:tierColor, color:tierText}}>
+            {isKakao ? "💬 " : "📧 "}{tierLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* 기능 목록 */}
+      <div className="bg-white rounded-3xl border border-gray-100 divide-y divide-gray-50">
+        {[
+          { icon:"❤️", label:"찜한 상품", desc:"찜 목록 보기", badge:"준비 중" },
+          { icon:"🔔", label:"가격 알림", desc:"알림 설정 관리", badge:"준비 중" },
+          ...(isKakao ? [{ icon:"💬", label:"카카오톡 알림", desc:"카카오 메시지로 알림 수신", badge:"준비 중" }] : []),
+        ].map(item => (
+          <div key={item.label} className="flex items-center gap-4 px-5 py-4">
+            <span className="text-xl">{item.icon}</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-gray-900">{item.label}</p>
+              <p className="text-xs text-gray-400">{item.desc}</p>
+            </div>
+            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">{item.badge}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* 로그아웃 */}
+      <button onClick={onLogout}
+        className="w-full py-3.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-500 active:bg-gray-50 transition">
+        로그아웃
+      </button>
+    </div>
+  );
+};
 
 // 더보기 화면 (피드백 버튼 + 법적 링크 포함)
 const MoreScreen = ({ onBack, onFeedback, onPrivacy, onTerms }) => (
@@ -1828,6 +1956,10 @@ export default function App() {
 
   const showLogin = useCallback(()=>setLoginModal(true),[]);
   const handleLoginDismiss = ()=>setLoginModal(null);
+  const handleLoginSuccess = useCallback((data)=>{
+    setUser({ user_id: data.user_id || "", email: data.email, provider: data.provider || "email", logged_in: true });
+    showToast("로그인 성공! 🎉");
+  },[showToast]);
 
   const saveScroll = useCallback(()=>{
     if(mainRef.current) scrollPositions.current[screen]=mainRef.current.scrollTop;
@@ -1850,8 +1982,10 @@ export default function App() {
     setActiveNav(id);
     if(id==="home"){ goTo("home"); return; }
     if(id==="more"){ goTo("more"); return; }
-    showLogin();
-  },[goTo,showLogin]);
+    if(id==="history"){ goTo("history"); return; }  // 미회원도 가격기록 접근 가능
+    if(!user){ showLogin(); return; }               // 찜·나의기록은 로그인 필요
+    goTo(id);
+  },[goTo,showLogin,user]);
 
   useEffect(()=>{
     const onPop=()=>setScreen(prev=>{
@@ -1926,7 +2060,7 @@ export default function App() {
             </button>
             <p className="text-base font-bold text-gray-900">나의기록</p>
           </div>
-          <EmptyMypage onLogin={showLogin}/>
+          {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
       // 더보기 화면
@@ -2030,7 +2164,7 @@ export default function App() {
       {showFeedback && <FeedbackSheet onClose={()=>setShowFeedback(false)} showToast={showToast}/>}
 
       {/* 로그인 모달 */}
-      {loginModal && <LoginModal onDismiss={handleLoginDismiss}/>}
+      {loginModal && <LoginModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
     </>
   );
 }

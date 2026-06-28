@@ -9,10 +9,14 @@ CREATE TABLE IF NOT EXISTS public.users (
     email         TEXT NOT NULL,
     nickname      TEXT DEFAULT '',
     profile_image TEXT DEFAULT '',
+    password_hash TEXT DEFAULT '',
     last_login    TIMESTAMPTZ DEFAULT now(),
     created_at    TIMESTAMPTZ DEFAULT now(),
     UNIQUE (provider, provider_id)
 );
+
+-- 기존 테이블에 이메일 가입용 컬럼 추가 (이미 있으면 무시됨)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT '';
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
