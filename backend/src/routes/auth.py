@@ -108,13 +108,13 @@ async def kakao_login():
     if not settings.KAKAO_CLIENT_ID:
         raise HTTPException(status_code=503, detail="카카오 로그인 준비 중입니다.")
     state = secrets.token_urlsafe(32)
-    # account_email 제거 — 동의항목 미설정 시 Kakao가 흐름을 차단함
+    # account_email: 카카오 개발자 콘솔에서 "카카오계정(이메일)" 동의항목 활성화 필요
     url = "https://kauth.kakao.com/oauth/authorize?" + urlencode({
         "client_id":     settings.KAKAO_CLIENT_ID,
         "redirect_uri":  settings.KAKAO_REDIRECT_URI,
         "response_type": "code",
         "state":         state,
-        "scope":         "profile_nickname",
+        "scope":         "profile_nickname,account_email",
     })
     resp = RedirectResponse(url=url)
     resp.set_cookie("oauth_state", state, max_age=600, httponly=False, secure=True, samesite="none")
@@ -129,12 +129,10 @@ async def kakao_callback(
     error: str | None = Query(default=None),
     error_description: str | None = Query(default=None),
 ):
-    # Kakao가 에러를 반환한 경우 로그 후 프론트로 리다이렉트
     if error:
         logger.error(f"카카오 OAuth 에러: {error} - {error_description}")
         return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=fail&reason={error}")
 
-    # CSRF state 검증 (실패해도 차단하지 않고 경고만 — 모바일 쿠키 이슈 대응)
     if oauth_state and state and not secrets.compare_digest(state, oauth_state):
         logger.warning(f"CSRF state 불일치 (계속 진행): got={state[:8]}.. expected={oauth_state[:8]}..")
 
@@ -142,7 +140,6 @@ async def kakao_callback(
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # 토큰 교환
             tr = await client.post("https://kauth.kakao.com/oauth/token", data={
                 "grant_type":    "authorization_code",
                 "client_id":     settings.KAKAO_CLIENT_ID,
@@ -150,22 +147,64 @@ async def kakao_callback(
                 "redirect_uri":  settings.KAKAO_REDIRECT_URI,
                 "code":          code,
             })
-            kakao_token = tr.json().get("access_token")
+            token_data  = tr.json()
+            kakao_token = token_data.get("access_token")
 
-            # 사용자 정보
+            if not kakao_token:
+                logger.error(f"카카오 토큰 교환 실패: {token_data}")
+                raise HTTPException(status_code=502, detail="카카오 토큰 발급 실패")
+
             ur = await client.get("https://kapi.kakao.com/v2/user/me",
                                   headers={"Authorization": f"Bearer {kakao_token}"})
             ud = ur.json()
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"카카오 로그인 오류: {_mask_err(e)}")
         raise HTTPException(status_code=502, detail="카카오 로그인에 실패했습니다.")
 
+    # ── 카카오 응답 전체 로그 (이메일 매핑 디버그용) ──────────────────
     provider_id = str(ud.get("id", ""))
     account     = ud.get("kakao_account", {})
     profile     = account.get("profile", {})
-    email       = account.get("email", f"kakao_{provider_id}@alitrack.kr")
-    nickname    = profile.get("nickname", "")
-    avatar      = profile.get("profile_image_url", "")
+
+    logger.info(
+        f"[Kakao 사용자 정보] "
+        f"id={provider_id} | "
+        f"has_email={account.get('has_email')} | "
+        f"email_needs_agreement={account.get('email_needs_agreement')} | "
+        f"email={account.get('email', '(없음)')} | "
+        f"nickname={profile.get('nickname', '(없음)')} | "
+        f"kakao_account_keys={list(account.keys())}"
+    )
+
+    # ── 이메일 추출 — 동의 여부 확인 후 안전하게 매핑 ─────────────────
+    email = ""
+    has_email         = account.get("has_email", False)
+    needs_agreement   = account.get("email_needs_agreement", True)
+    kakao_email       = account.get("email", "")
+
+    if has_email and not needs_agreement and kakao_email:
+        email = kakao_email
+        logger.info(f"[Kakao 이메일 확정] {email}")
+    else:
+        # 이메일 동의 안 했거나 없음 — @alitrack.kr 가짜 주소 저장 금지
+        # provider_id 기반 내부 식별자로 대체 (표시용으로만 사용)
+        if provider_id:
+            email = f"kakao_{provider_id}@kakao.local"
+        else:
+            logger.error(f"[Kakao] provider_id 없음. 응답 전체: {ud}")
+            raise HTTPException(status_code=502, detail="카카오 사용자 정보를 가져오지 못했습니다.")
+        logger.warning(
+            f"[Kakao 이메일 없음] "
+            f"has_email={has_email}, needs_agreement={needs_agreement}, "
+            f"kakao_email='{kakao_email}' → 내부 식별자 사용: {email}"
+        )
+
+    nickname = profile.get("nickname", "")
+    avatar   = profile.get("profile_image_url", "")
+
+    logger.info(f"[Kakao 최종] provider_id={provider_id}, email={email}, nickname={nickname}")
 
     user_id = await _upsert_user("kakao", provider_id, email, nickname, avatar)
     return _success_redirect(Response(), user_id, email, "kakao")
