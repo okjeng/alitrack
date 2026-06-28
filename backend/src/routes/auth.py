@@ -109,20 +109,22 @@ def _verify_pw(plain: str, hashed: str) -> bool:
 
 async def _upsert_user(provider: str, provider_id: str, email: str,
                        nickname: str = "", password_hash: str = "") -> str:
-    try:
-        rows = await sb_upsert("users", {
-            "provider":      provider,
-            "provider_id":   provider_id,
-            "email":         email,
-            "nickname":      nickname,
-            "profile_image": "",
-            "password_hash": password_hash,
-            "last_login":    datetime.now(timezone.utc).isoformat(),
-        })
-        if rows:
-            return rows[0].get("id", provider_id)
-    except Exception as e:
-        logger.warning(f"users upsert 실패: {type(e).__name__}")
+    # 1차 시도: password_hash 포함
+    for attempt, data in enumerate([
+        {"provider": provider, "provider_id": provider_id, "email": email,
+         "nickname": nickname, "password_hash": password_hash,
+         "last_login": datetime.now(timezone.utc).isoformat()},
+        # 2차: password_hash 컬럼 없을 때 폴백
+        {"provider": provider, "provider_id": provider_id, "email": email,
+         "nickname": nickname,
+         "last_login": datetime.now(timezone.utc).isoformat()},
+    ]):
+        try:
+            rows = await sb_upsert("users", data)
+            if rows:
+                return rows[0].get("id", provider_id)
+        except Exception as e:
+            logger.warning(f"users upsert 실패 (attempt {attempt+1}): {type(e).__name__}")
     return provider_id
 
 

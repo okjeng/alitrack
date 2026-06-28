@@ -51,12 +51,16 @@ async def sb_select(table: str, filters: dict = None, order: str = None,
 
 
 async def sb_upsert(table: str, data: dict) -> list:
+    import logging
+    log = logging.getLogger("alitrack.supabase")
     async with httpx.AsyncClient(timeout=8.0) as client:
         r = await client.post(
             f"{_base()}/{table}",
             headers={**_headers(), "Prefer": "resolution=merge-duplicates,return=representation"},
             json=data,
         )
+        if not r.is_success:
+            log.error(f"sb_upsert [{table}] {r.status_code}: {r.text[:300]}")
         r.raise_for_status()
         return r.json()
 
