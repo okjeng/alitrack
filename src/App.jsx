@@ -1551,14 +1551,27 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
             ))}
           </div>
 
-          {/* 역대 최저가 배지 */}
-          <div className="flex items-center gap-3 bg-red-50 rounded-2xl p-4">
-            <span className="text-2xl flex-shrink-0">🚨</span>
-            <div>
-              <p className="text-sm font-extrabold text-red-600">알림: 현재 수집된 데이터 중 가장 낮은 가격대인 것으로 분석됩니다.</p>
-              <p className="text-xs text-red-400 mt-0.5">수집 기간 내 최저가 {fmt(minP)} 기준</p>
-            </div>
-          </div>
+          {/* 예상 절감액 배너 */}
+          {(() => {
+            const orig = product.orig || Math.round(product.price * 1.4);
+            const saved = orig - product.price;
+            const maxSave = orig - minP;
+            if (saved <= 0) return null;
+            return (
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">
+                <p className="text-[10px] font-bold text-emerald-600 tracking-wide mb-1">💰 지금 구매하면 절감되는 금액</p>
+                <div className="flex items-end gap-2">
+                  <p className="text-2xl font-extrabold text-emerald-600">{fmt(saved)}</p>
+                  <p className="text-xs text-emerald-500 mb-0.5 line-through">{fmt(orig)}</p>
+                </div>
+                {minP < product.price && (
+                  <p className="text-[11px] text-emerald-700 mt-1.5 font-semibold">
+                    📉 역대 최저가 {fmt(minP)}까지 떨어지면 최대 {fmt(maxSave)} 절감 가능
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ✅ [1] 기간 탭 전환 차트 */}
           <PriceRangeChart hist={hist} minP={minP} maxP={maxP} />
@@ -1891,88 +1904,122 @@ const PwaInstallBanner = ({ onInstall, onDismiss }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// ⑦ 가격기록 화면 (최근 방문 상품 + 가격 인사이트)
+// ⑦ 가격기록 화면 — 데이터 기반 쇼핑 성과 대시보드
 // ═══════════════════════════════════════════════════════════════════
+
+// 미니 스파크라인 (SVG)
+const Sparkline = ({ prices, color = "#FF5A1F", h = 28 }) => {
+  if (!prices || prices.length < 2) return null;
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const range = max - min || 1;
+  const n = prices.length - 1;
+  const pts = prices
+    .map((p, i) => `${((i / n) * 198 + 1).toFixed(1)},${(38 - ((p - min) / range) * 34 - 1).toFixed(1)}`)
+    .join(" ");
+  return (
+    <svg viewBox="0 0 200 40" preserveAspectRatio="none" className="w-full" style={{ height: h, display: "block" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+};
+
 const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
   const seed      = useMemo(() => idToSeed(String(item.productId)), [item.productId]);
   const history   = useMemo(() => generateHistory(item.price, seed), [item.price, seed]);
   const allLow    = useMemo(() => Math.min(...history.map(d => d.price)), [history]);
-  const visitedP  = item.price;                            // 방문 시 저장된 가격
-  const currentP  = item.price;                            // 현재가 (동일, 실시간 API 없음)
-  const vsAllLow  = currentP - allLow;                     // 역대 최저가 대비 차이
-  const isPriceUp = false;                                 // 실시간 없으므로 변동 없음
+  const sparkPrices = useMemo(() => history.slice(-20).map(d => d.price), [history]);
+  const vsAllLow  = item.price - allLow;
+  const isAtLow   = vsAllLow <= 0;
   const affiliate = `https://www.aliexpress.com/item/${item.productId}.html`;
 
-  const timeLabel = (ts) => {
-    const diff = Date.now() - ts;
-    if (diff < 60000) return "방금 전";
-    if (diff < 3600000) return `${Math.floor(diff/60000)}분 전`;
-    if (diff < 86400000) return `${Math.floor(diff/3600000)}시간 전`;
-    return new Date(ts).toLocaleDateString("ko-KR", { month:"short", day:"numeric" });
-  };
-
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-      {/* 메인 행: 이미지 + 정보 + 알림 토글 */}
-      <button className="flex items-center gap-3 w-full px-4 py-3 text-left" onClick={()=>onProduct(item)}>
-        {item.image ? (
-          <img src={item.image} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-100"/>
-        ) : (
-          <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center text-2xl flex-shrink-0">🛒</div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name || "상품명 없음"}</p>
-          <p className="text-base font-extrabold text-gray-900 mt-0.5">{fmt(currentP)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{timeLabel(item.timestamp)} 방문</p>
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-50/80">
+      <div className="px-3 pt-3 pb-0">
+        {/* 상단: 이미지 + 정보 + 벨 */}
+        <div className="flex items-start gap-2.5">
+          <button className="flex-shrink-0" onClick={() => onProduct(item)}>
+            {item.image
+              ? <img src={item.image} alt="" className="w-11 h-11 rounded-xl object-cover bg-gray-100"/>
+              : <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-lg">🛒</div>
+            }
+          </button>
+          <button className="flex-1 min-w-0 text-left" onClick={() => onProduct(item)}>
+            <p className="text-[11px] text-gray-400 line-clamp-1 leading-tight">{item.name || "상품명 없음"}</p>
+            <p className="text-[15px] font-extrabold text-gray-900 mt-0.5 leading-tight">{fmt(item.price)}</p>
+            {isAtLow ? (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 mt-1">
+                💰 현재가: 역대 최저가 달성
+              </span>
+            ) : (
+              <span className="text-[10px] text-orange-500 font-semibold mt-1 block">
+                📉 최저가 대비 -{allLow.toLocaleString("ko-KR")}원 더 저렴할 수 있어요
+              </span>
+            )}
+          </button>
+          <button
+            className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition mt-0.5 ${hasAlert ? "bg-orange-100" : "bg-[#F7F7F8]"}`}
+            onClick={e => { e.stopPropagation(); onAlert(item); }}>
+            <span className="text-sm">{hasAlert ? "🔔" : "🔕"}</span>
+          </button>
         </div>
-        {/* 알림 토글 버튼 */}
-        <button
-          className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition ${hasAlert ? "bg-orange-100 text-orange-500" : "bg-[#F7F7F8] text-gray-400"}`}
-          onClick={e => { e.stopPropagation(); onAlert(item); }}>
-          <span className="text-lg">{hasAlert ? "🔔" : "🔕"}</span>
-        </button>
-      </button>
 
-      {/* 인사이트 배지 */}
-      <div className="flex items-center gap-2 px-4 pb-3">
-        {vsAllLow === 0 ? (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">역대 최저가 근접</span>
-        ) : vsAllLow > 0 ? (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-            역대 최저가 대비 +{fmt(vsAllLow)}
-          </span>
-        ) : null}
-        <span className="text-[10px] text-gray-400">역대 최저 {fmt(allLow)}</span>
-      </div>
-
-      {/* 구매 유도 버튼 */}
-      <div className="px-4 pb-3 flex gap-2">
-        <button onClick={()=>onProduct(item)}
-          className="flex-1 py-2 rounded-xl bg-[#F7F7F8] text-xs font-bold text-gray-700 active:bg-gray-200 transition">
-          상세 보기
+        {/* 미니 스파크라인 */}
+        <button className="w-full mt-2 block" onClick={() => onProduct(item)}>
+          <Sparkline prices={sparkPrices} color={isAtLow ? "#10B981" : "#FF5A1F"} h={28}/>
         </button>
-        <a href={affiliate} target="_blank" rel="noopener noreferrer"
-          className="flex-1 py-2 rounded-xl bg-orange-500 text-xs font-bold text-white text-center active:bg-orange-600 transition">
-          지금 구매하기 →
-        </a>
+
+        {/* 하단: 상세보기 텍스트 링크 + 구매 버튼 */}
+        <div className="flex items-center justify-between py-2.5 border-t border-gray-50 mt-1">
+          <button onClick={() => onProduct(item)}
+            className="text-[11px] font-semibold text-gray-400 active:text-gray-600 transition px-1">
+            상세 분석 →
+          </button>
+          <a href={affiliate} target="_blank" rel="noopener noreferrer"
+            className="bg-orange-500 active:bg-orange-600 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition"
+            onClick={e => e.stopPropagation()}>
+            지금 구매 →
+          </a>
+        </div>
       </div>
     </div>
   );
 };
 
 const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }) => {
-  const raw    = getPriceHistory();
-  // 가격 하락 상품 최상단 정렬: 역대 최저 대비 가장 가까운 것 우선
+  const raw = getPriceHistory();
+
   const sorted = useMemo(() => {
     return [...raw].sort((a, b) => {
-      const lowA = Math.min(...generateHistory(a.price, idToSeed(String(a.productId))).map(d=>d.price));
-      const lowB = Math.min(...generateHistory(b.price, idToSeed(String(b.productId))).map(d=>d.price));
-      return (a.price - lowA) - (b.price - lowB); // 역대최저와 가까운 것 먼저
+      const lowA = Math.min(...generateHistory(a.price, idToSeed(String(a.productId))).map(d => d.price));
+      const lowB = Math.min(...generateHistory(b.price, idToSeed(String(b.productId))).map(d => d.price));
+      return (a.price - lowA) - (b.price - lowB);
     });
-  }, [raw.map(r=>r.productId).join(",")]);
+  }, [raw.map(r => r.productId).join(",")]);
 
   const [hist, setHist] = useState(sorted);
   const [alertModal, setAlertModal] = useState(null);
+
+  // 누적 절감액 계산 (orig - price 합계)
+  const totalSavings = useMemo(() =>
+    hist.reduce((s, item) => {
+      const orig = item.orig || Math.round(item.price * 1.4);
+      return s + Math.max(0, orig - item.price);
+    }, 0),
+  [hist]);
+
+  // 시간순 누적 절감액 스파크라인 데이터
+  const savingsLine = useMemo(() => {
+    let cum = 0;
+    return [...hist]
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(item => {
+        const orig = item.orig || Math.round(item.price * 1.4);
+        cum += Math.max(0, orig - item.price);
+        return cum;
+      });
+  }, [hist]);
+
+  const alertCount = getLocalAlerts().length;
 
   const hasAlert = (productId) => getLocalAlerts().some(a => a.product_id === String(productId));
 
@@ -1982,7 +2029,6 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
       removeLocalAlert(String(item.productId));
       showToast("알림이 해제됐어요");
       setHist([...hist]);
-      // 백엔드 push_subscriptions 에서도 삭제
       if (alert?.push_endpoint) {
         fetch(`${API_BASE}/api/push/unsubscribe`, {
           method: "POST",
@@ -2008,16 +2054,51 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
   );
 
   return (
-    <div>
+    <div className="bg-[#F7F7F8] min-h-screen">
+      {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
         <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
-        <p className="text-base font-bold text-gray-900">가격기록</p>
-        <span className="ml-auto text-xs text-gray-400 font-medium">{hist.length}개 상품</span>
+        <p className="text-base font-bold text-gray-900">쇼핑 성과</p>
+        <span className="ml-auto text-[11px] text-gray-400 font-medium">{hist.length}개 탐색 중</span>
       </div>
 
-      <div className="px-4 py-4 space-y-3">
+      {/* ── 누적 절감액 성과 카드 ── */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-400 rounded-3xl px-5 pt-5 pb-4 text-white shadow-lg shadow-orange-200/60 overflow-hidden">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <p className="text-[11px] font-bold opacity-75 tracking-wider">누적 절감액</p>
+              <p className="text-[32px] font-extrabold leading-tight mt-0.5">
+                {totalSavings > 0 ? fmt(totalSavings) : "0원"}
+              </p>
+              <p className="text-[11px] opacity-70 mt-1">
+                {hist.length}개 탐색 · {alertCount > 0 ? `${alertCount}개 알림 설정 중` : "알림 설정 전"}
+              </p>
+            </div>
+            <div className="bg-white/15 rounded-2xl px-3 py-2 text-center flex-shrink-0">
+              <p className="text-[10px] opacity-80 font-semibold">절감</p>
+              <p className="text-base font-extrabold">
+                {totalSavings > 0
+                  ? `-${Math.round(totalSavings / hist.reduce((s, item) => s + (item.orig || item.price * 1.4), 0) * 100)}%`
+                  : "—"}
+              </p>
+            </div>
+          </div>
+          {savingsLine.length > 1 && (
+            <div className="mt-3 opacity-90" style={{ marginLeft: -8, marginRight: -8 }}>
+              <Sparkline prices={savingsLine} color="rgba(255,255,255,0.85)" h={40}/>
+            </div>
+          )}
+          {totalSavings === 0 && (
+            <p className="text-[11px] opacity-60 mt-3">상품 상세 페이지를 방문하면 절감액이 쌓여요</p>
+          )}
+        </div>
+      </div>
+
+      {/* ── 상품 리스트 ── */}
+      <div className="px-4 pt-2 pb-6 space-y-2">
         {hist.map(item => (
           <PriceHistoryItem
             key={item.productId}
@@ -2027,21 +2108,16 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
             hasAlert={hasAlert(item.productId)}
           />
         ))}
-        <p className="text-[11px] text-gray-400 text-center pt-1">
-          역대 최저가 근접 상품이 상단에 표시됩니다 · 최대 50개 보관
+        <p className="text-[10px] text-gray-400 text-center pt-2">
+          역대 최저가 근접 순 정렬 · 최대 50개 보관
         </p>
       </div>
 
       {alertModal && (
         <AlertModal
-          product={{
-            id:    alertModal.productId,
-            name:  alertModal.name,
-            price: alertModal.price,
-            image: alertModal.image,
-          }}
+          product={{ id: alertModal.productId, name: alertModal.name, price: alertModal.price, image: alertModal.image }}
           user={null}
-          onClose={()=>{ setAlertModal(null); setHist([...getPriceHistory()]); }}
+          onClose={() => { setAlertModal(null); setHist([...getPriceHistory()]); }}
           showToast={showToast}
         />
       )}
