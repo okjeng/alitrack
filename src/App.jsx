@@ -120,6 +120,48 @@ const idToSeed  = (id) => id.split("").reduce((a,c) => a + c.charCodeAt(0), 0) *
 const NAV_H     = 56;
 const BTN_H     = 72;
 
+// ─── 게스트 유틸 ─────────────────────────────────────────────────────
+const getGuestId = () => {
+  try {
+    let id = localStorage.getItem("alitrack_guest_id");
+    if (!id) {
+      const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+      id = `ALI-${rand}`;
+      localStorage.setItem("alitrack_guest_id", id);
+    }
+    return id;
+  } catch { return "ALI-GUEST"; }
+};
+
+const getLocalAlerts = () => {
+  try { return JSON.parse(localStorage.getItem("alitrack_local_alerts") || "[]"); } catch { return []; }
+};
+const saveLocalAlert = (alert) => {
+  try {
+    const list = getLocalAlerts().filter(a => a.product_id !== alert.product_id);
+    list.push(alert);
+    localStorage.setItem("alitrack_local_alerts", JSON.stringify(list));
+  } catch {}
+};
+const removeLocalAlert = (productId) => {
+  try {
+    localStorage.setItem("alitrack_local_alerts", JSON.stringify(getLocalAlerts().filter(a => a.product_id !== productId)));
+  } catch {}
+};
+
+const getLocalWishlist = () => {
+  try { return JSON.parse(localStorage.getItem("alitrack_wishlist") || "[]"); } catch { return []; }
+};
+const toggleLocalWish = (product) => {
+  try {
+    const list = getLocalWishlist();
+    const idx  = list.findIndex(p => p.id === product.id);
+    if (idx >= 0) { list.splice(idx, 1); } else { list.push({ id: product.id, name: product.name, price: product.price, image_url: product.image }); }
+    localStorage.setItem("alitrack_wishlist", JSON.stringify(list));
+    return idx < 0;
+  } catch { return false; }
+};
+
 const buildAffiliateUrl = (productId) =>
   `https://www.aliexpress.com/item/${productId}.html`;
 
@@ -466,45 +508,110 @@ const ShareSheet = ({ product, onClose, showToast, user }) => {
   );
 };
 
-// 모달: 알림
-const ALERT_ITEMS = [
-  {id:"lowest",  label:"역대 최저가 돌파 알림",     emoji:"📉"},
-  {id:"card",    label:"내 보유카드 맞춤 할인 알림", emoji:"🎟️"},
-  {id:"restock", label:"품절 상품 재입고 알림",      emoji:"📦"},
-  {id:"watch",   label:"관심상품 가격 변동 알림",    emoji:"🌟"},
-];
+// ═══════════════════════════════════════════════════════════════════
+// 모달: 최저가 알림 신청 (미회원 포함, 이메일 불필요)
+// ═══════════════════════════════════════════════════════════════════
+const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
+  const [step, setStep]     = useState("price");
+  const [target, setTarget] = useState(String(Math.round((product?.price || 0) * 0.9)));
+  const [loading, setLoad]  = useState(false);
+  const isKakao  = user?.provider === "kakao";
+  const curPrice = product?.price || 0;
 
-const AlertModal = ({ onClose, showToast }) => {
-  const [toggles, setToggles] = useState({lowest:true,card:false,restock:false,watch:true});
-  const flip = (id) => setToggles(p=>{
-    const n={...p,[id]:!p[id]};
-    showToast(n[id]?"알림이 설정되었어요 🔔":"알림이 해제되었어요");
-    return n;
-  });
+  const submit = async () => {
+    const price = parseInt(target.replace(/[^0-9]/g,""), 10);
+    if (!price || price <= 0) { showToast("올바른 가격을 입력해주세요."); return; }
+
+    if (isKakao) {
+      // 카카오 회원 → 백엔드 저장
+      setLoad(true);
+      try {
+        const tok = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
+        const res = await fetch(`${API_BASE}/api/alerts/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+          body: JSON.stringify({ product_id: product.id, product_name: product.name, target_price: price }),
+        });
+        if (!res.ok) { const d = await res.json(); showToast(d.detail || "신청 실패"); return; }
+      } catch { showToast("네트워크 오류"); return; }
+      finally { setLoad(false); }
+    } else {
+      // 미회원 → localStorage 저장
+      saveLocalAlert({ product_id: product.id, product_name: product.name, image: product.image, target_price: price, current_price: curPrice, saved_at: new Date().toISOString() });
+    }
+    setStep("done");
+  };
+
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
-      <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-5 animate-slideUp"
-           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)"}}
+      <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
+           style={{paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 28px)"}}
            onClick={e=>e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-        <p className="text-base font-bold text-gray-900 mb-1">알림 설정</p>
-        <p className="text-xs text-gray-400 mb-5">원하는 알림만 골라서 받으세요</p>
-        <div className="space-y-2">
-          {ALERT_ITEMS.map(item=>(
-            <div key={item.id} className="flex items-center justify-between px-4 py-3.5 rounded-2xl bg-gray-50">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.emoji}</span>
-                <span className="text-sm font-semibold text-gray-800">{item.label}</span>
-              </div>
-              <button onClick={()=>flip(item.id)}
-                className={`relative w-12 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${toggles[item.id]?"bg-orange-500":"bg-gray-200"}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200 ${toggles[item.id]?"left-6":"left-0.5"}`} />
-              </button>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+
+        {step === "price" && (
+          <>
+            <p className="text-lg font-extrabold text-gray-900 mb-1">최저가 알림 신청 🔔</p>
+            <p className="text-xs text-gray-400 mb-4">목표 가격 도달 시 바로 알려드려요</p>
+            <div className="bg-[#F7F7F8] rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
+              <span className="text-xs text-gray-400">현재 가격</span>
+              <span className="text-base font-extrabold text-gray-900">{fmt(curPrice)}</span>
             </div>
-          ))}
-        </div>
-        <button onClick={onClose} className="w-full mt-4 py-4 rounded-2xl bg-orange-500 text-white text-sm font-bold">저장하기</button>
+            <p className="text-xs font-bold text-gray-700 mb-2">목표 가격</p>
+            <div className="flex items-center border-2 border-orange-400 rounded-2xl px-4 mb-1 bg-white">
+              <input type="number" value={target} onChange={e=>setTarget(e.target.value)}
+                className="flex-1 py-3.5 text-xl font-bold outline-none bg-transparent"
+                onKeyDown={e=>e.key==="Enter" && submit()} />
+              <span className="text-sm text-gray-400 font-bold ml-1">원</span>
+            </div>
+            <p className="text-[11px] text-gray-400 mb-5">현재보다 낮게 설정해주세요 (예: {fmt(Math.round(curPrice*0.9))})</p>
+            <button onClick={submit} disabled={loading}
+              className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition disabled:opacity-60">
+              {loading ? "신청 중..." : "알림 신청하기"}
+            </button>
+            {!user && <p className="text-[11px] text-gray-400 text-center mt-3">가입 없이 바로 신청 가능</p>}
+          </>
+        )}
+
+        {step === "done" && (
+          <>
+            <div className="text-center mb-5">
+              <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3">🔔</div>
+              <p className="text-lg font-extrabold text-gray-900">알림이 등록됐어요!</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {isKakao ? "카카오 계정에 저장됐어요" : `이 기기에 저장됐어요 (ID: ${getGuestId()})`}
+              </p>
+            </div>
+
+            {!isKakao && (
+              <div className="bg-[#FFFBEE] border border-yellow-200 rounded-2xl p-4 mb-4">
+                <p className="text-sm font-extrabold text-gray-900 mb-0.5">💬 카카오로 시작하면</p>
+                <p className="text-xs text-gray-500 mb-3">소중한 기록이 안전하게 보관돼요</p>
+                <div className="space-y-1.5 mb-4">
+                  {[
+                    "📈 가격기록 — 영구 보관",
+                    "❤️ 관심상품 — 영구 저장",
+                    "🔄 기기 변경 시 데이터 연동",
+                    "💬 카카오톡 알림 수신",
+                  ].map(t=>(
+                    <p key={t} className="text-[12px] text-gray-700 flex items-center gap-1.5">{t}</p>
+                  ))}
+                </div>
+                <button onClick={()=>{ onClose(); setTimeout(showLogin, 80); }}
+                  className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2"
+                  style={{background:"#FEE500",color:"#181600"}}>
+                  <span>💬</span>카카오로 계속하기 →
+                </button>
+              </div>
+            )}
+
+            <button onClick={onClose}
+              className="w-full py-3 rounded-2xl text-sm font-semibold text-gray-500 bg-gray-50 active:bg-gray-100 transition">
+              {isKakao ? "확인" : "나중에"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1241,10 +1348,15 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
 // ═══════════════════════════════════════════════════════════════════
 // 화면 3: 상품 상세 (셀러비교 + 쿠팡링크 통합)
 // ═══════════════════════════════════════════════════════════════════
-const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
+const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
   const [shareOpen, setShareOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
-  const [wished, setWished]       = useState(false);
+  const [wished, setWished]       = useState(() => {
+    try { return getLocalWishlist().some(p => p.id === product.id); } catch { return false; }
+  });
+  const [alertActive, setAlertActive] = useState(() => {
+    try { return getLocalAlerts().some(a => a.product_id === product.id); } catch { return false; }
+  });
 
   const seed         = useMemo(() => idToSeed(product.id), [product.id]);
   const hist         = useMemo(() => generateHistory(product.price, seed), [product.price, seed]);
@@ -1252,8 +1364,19 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
   const maxP         = useMemo(() => Math.max(...hist.map(d => d.price)), [hist]);
   const affiliateUrl = useMemo(() => buildAffiliateUrl(product.id), [product.id]);
 
-  const handleWish  = () => showLogin();
-  const handleAlert = () => showLogin();
+  const isKakao = user?.provider === "kakao";
+
+  const handleWish = () => {
+    const nowWished = toggleLocalWish(product);
+    setWished(nowWished);
+    if (nowWished) {
+      showToast(isKakao ? "관심상품에 추가했어요 ❤️" : "관심상품에 추가했어요 ❤️  (카카오 가입 시 영구 보관)");
+    } else {
+      showToast("관심상품에서 제거했어요");
+    }
+  };
+
+  const handleAlert = () => setAlertOpen(true);
 
   return (
     <>
@@ -1302,9 +1425,9 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
           {/* 액션 버튼 */}
           <div className="flex gap-2">
             {[
-              {icon:wished?"❤️":"🤍", label:"관심상품", action:handleWish},
-              {icon:"🔔", label:"알림 받기",  action:handleAlert},
-              {icon:"🔗", label:"공유하기",   action:()=>setShareOpen(true)},
+              {icon:wished?"❤️":"🤍",       label:"관심상품", action:handleWish},
+              {icon:alertActive?"🔔":"🔕",   label:"알림 받기", action:handleAlert},
+              {icon:"🔗",                    label:"공유하기",  action:()=>setShareOpen(true)},
             ].map(b => (
               <button key={b.label} onClick={b.action}
                 className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-[#F7F7F8] active:bg-gray-200 transition">
@@ -1359,8 +1482,8 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
         </a>
       </div>
 
-      {shareOpen && <ShareSheet product={product} onClose={()=>setShareOpen(false)} showToast={showToast}/>}
-      {alertOpen && <AlertModal onClose={()=>setAlertOpen(false)} showToast={showToast}/>}
+      {shareOpen && <ShareSheet product={product} onClose={()=>setShareOpen(false)} showToast={showToast} user={user}/>}
+      {alertOpen && <AlertModal product={product} user={user} onClose={()=>{ setAlertOpen(false); setAlertActive(getLocalAlerts().some(a=>a.product_id===product.id)); }} showToast={showToast} showLogin={showLogin}/>}
     </>
   );
 };
@@ -1872,7 +1995,29 @@ export default function App() {
       headers: { Authorization: `Bearer ${stored}` },
     })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.logged_in) setUser(data); })
+      .then(data => {
+        if (!data?.logged_in) return;
+        setUser(data);
+        // 카카오 가입 후 게스트 로컬 데이터 → 계정 통합
+        if (data.provider === "kakao") {
+          const localAlerts = getLocalAlerts();
+          if (localAlerts.length > 0 && stored) {
+            fetch(`${API_BASE}/api/alerts/merge-guest`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${stored}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ alerts: localAlerts }),
+            })
+              .then(r => r.json())
+              .then(d => {
+                if (d.merged > 0) {
+                  showToast(`알림 ${d.merged}건이 계정에 통합됐어요 🎉`);
+                  localStorage.removeItem("alitrack_local_alerts");
+                }
+              })
+              .catch(() => {});
+          }
+        }
+      })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1966,7 +2111,7 @@ export default function App() {
     switch(screen){
       case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
       case "feed":     return selCat?<CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/>:null;
-      case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast}/>:null;
+      case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/>:null;
       // ⑦ Empty State 적용
       case "history":  return (
         <div>
