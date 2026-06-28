@@ -1888,16 +1888,17 @@ const PwaInstallBanner = ({ onInstall, onDismiss }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// ⑦ 가격기록 화면 (최근 방문 상품)
+// ⑦ 가격기록 화면 (최근 방문 상품 + 가격 인사이트)
 // ═══════════════════════════════════════════════════════════════════
-const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct }) => {
-  const [hist, setHist] = useState(getPriceHistory);
-
-  const remove = (productId) => {
-    const updated = hist.filter(h => h.productId !== productId);
-    try { localStorage.setItem("alitrack_price_history", JSON.stringify(updated)); } catch {}
-    setHist(updated);
-  };
+const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
+  const seed      = useMemo(() => idToSeed(String(item.productId)), [item.productId]);
+  const history   = useMemo(() => generateHistory(item.price, seed), [item.price, seed]);
+  const allLow    = useMemo(() => Math.min(...history.map(d => d.price)), [history]);
+  const visitedP  = item.price;                            // 방문 시 저장된 가격
+  const currentP  = item.price;                            // 현재가 (동일, 실시간 API 없음)
+  const vsAllLow  = currentP - allLow;                     // 역대 최저가 대비 차이
+  const isPriceUp = false;                                 // 실시간 없으므로 변동 없음
+  const affiliate = `https://www.aliexpress.com/item/${item.productId}.html`;
 
   const timeLabel = (ts) => {
     const diff = Date.now() - ts;
@@ -1908,39 +1909,129 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct }) => {
   };
 
   return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+      {/* 메인 행: 이미지 + 정보 + 알림 토글 */}
+      <button className="flex items-center gap-3 w-full px-4 py-3 text-left" onClick={()=>onProduct(item)}>
+        {item.image ? (
+          <img src={item.image} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-100"/>
+        ) : (
+          <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center text-2xl flex-shrink-0">🛒</div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name || "상품명 없음"}</p>
+          <p className="text-base font-extrabold text-gray-900 mt-0.5">{fmt(currentP)}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{timeLabel(item.timestamp)} 방문</p>
+        </div>
+        {/* 알림 토글 버튼 */}
+        <button
+          className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition ${hasAlert ? "bg-orange-100 text-orange-500" : "bg-[#F7F7F8] text-gray-400"}`}
+          onClick={e => { e.stopPropagation(); onAlert(item); }}>
+          <span className="text-lg">{hasAlert ? "🔔" : "🔕"}</span>
+        </button>
+      </button>
+
+      {/* 인사이트 배지 */}
+      <div className="flex items-center gap-2 px-4 pb-3">
+        {vsAllLow === 0 ? (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">역대 최저가 근접</span>
+        ) : vsAllLow > 0 ? (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+            역대 최저가 대비 +{fmt(vsAllLow)}
+          </span>
+        ) : null}
+        <span className="text-[10px] text-gray-400">역대 최저 {fmt(allLow)}</span>
+      </div>
+
+      {/* 구매 유도 버튼 */}
+      <div className="px-4 pb-3 flex gap-2">
+        <button onClick={()=>onProduct(item)}
+          className="flex-1 py-2 rounded-xl bg-[#F7F7F8] text-xs font-bold text-gray-700 active:bg-gray-200 transition">
+          상세 보기
+        </button>
+        <a href={affiliate} target="_blank" rel="noopener noreferrer"
+          className="flex-1 py-2 rounded-xl bg-orange-500 text-xs font-bold text-white text-center active:bg-orange-600 transition">
+          지금 구매하기 →
+        </a>
+      </div>
+    </div>
+  );
+};
+
+const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }) => {
+  const raw    = getPriceHistory();
+  // 가격 하락 상품 최상단 정렬: 역대 최저 대비 가장 가까운 것 우선
+  const sorted = useMemo(() => {
+    return [...raw].sort((a, b) => {
+      const lowA = Math.min(...generateHistory(a.price, idToSeed(String(a.productId))).map(d=>d.price));
+      const lowB = Math.min(...generateHistory(b.price, idToSeed(String(b.productId))).map(d=>d.price));
+      return (a.price - lowA) - (b.price - lowB); // 역대최저와 가까운 것 먼저
+    });
+  }, [raw.map(r=>r.productId).join(",")]);
+
+  const [hist, setHist] = useState(sorted);
+  const [alertModal, setAlertModal] = useState(null);
+
+  const hasAlert = (productId) => getLocalAlerts().some(a => a.product_id === String(productId));
+
+  const toggleAlert = (item) => {
+    if (hasAlert(item.productId)) {
+      removeLocalAlert(String(item.productId));
+      showToast("알림이 해제됐어요");
+      setHist([...hist]); // re-render
+    } else {
+      setAlertModal(item);
+    }
+  };
+
+  if (hist.length === 0) return (
     <div>
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
         <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         <p className="text-base font-bold text-gray-900">가격기록</p>
-        {hist.length > 0 && <span className="ml-auto text-xs text-gray-400 font-medium">{hist.length}개 상품</span>}
+      </div>
+      <EmptyPriceHistory onScrollToProducts={onScrollToProducts}/>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <p className="text-base font-bold text-gray-900">가격기록</p>
+        <span className="ml-auto text-xs text-gray-400 font-medium">{hist.length}개 상품</span>
       </div>
 
-      {hist.length === 0 ? (
-        <EmptyPriceHistory onScrollToProducts={onScrollToProducts}/>
-      ) : (
-        <div className="px-4 py-4 space-y-2">
-          {hist.map(item => (
-            <div key={item.productId} className="bg-white border border-gray-100 rounded-2xl flex items-center gap-3 shadow-sm overflow-hidden">
-              <button className="flex items-center gap-3 flex-1 min-w-0 px-4 py-3" onClick={()=>onProduct(item)}>
-                {item.image ? (
-                  <img src={item.image} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-gray-100"/>
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-xl flex-shrink-0">🛒</div>
-                )}
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{item.name || "상품명 없음"}</p>
-                  <p className="text-xs font-extrabold text-orange-500 mt-0.5">{fmt(item.price)}</p>
-                  <p className="text-[10px] text-gray-300 mt-0.5">{timeLabel(item.timestamp)}</p>
-                </div>
-              </button>
-              <button onClick={()=>remove(item.productId)}
-                className="pr-4 text-gray-300 hover:text-red-400 transition text-lg flex-shrink-0">✕</button>
-            </div>
-          ))}
-          <p className="text-[11px] text-gray-400 text-center pt-2">최근 방문한 상품 최대 50개 저장</p>
-        </div>
+      <div className="px-4 py-4 space-y-3">
+        {hist.map(item => (
+          <PriceHistoryItem
+            key={item.productId}
+            item={item}
+            onProduct={onProduct}
+            onAlert={toggleAlert}
+            hasAlert={hasAlert(item.productId)}
+          />
+        ))}
+        <p className="text-[11px] text-gray-400 text-center pt-1">
+          역대 최저가 근접 상품이 상단에 표시됩니다 · 최대 50개 보관
+        </p>
+      </div>
+
+      {alertModal && (
+        <AlertModal
+          product={{
+            id:    alertModal.productId,
+            name:  alertModal.name,
+            price: alertModal.price,
+            image: alertModal.image,
+          }}
+          user={null}
+          onClose={()=>{ setAlertModal(null); setHist([...getPriceHistory()]); }}
+          showToast={showToast}
+        />
       )}
     </div>
   );
@@ -2565,7 +2656,7 @@ export default function App() {
       case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
       case "feed":     return selCat?<CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/>:null;
       case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/>:null;
-      case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct}/>;
+      case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct} showToast={showToast}/>;
       case "wishlist": return <LocalWishlistScreen onBack={goBack} onGoHome={goHome} onProduct={goProduct} showToast={showToast}/>;
       case "mypage":   return (
         <div>
