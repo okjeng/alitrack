@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     # ── 스케줄러 인증 키 ─────────────────────────────────────────
     CRON_SECRET: str         = ""
 
+    # ── Web Push (VAPID) ─────────────────────────────────────────
+    VAPID_PUBLIC_KEY: str    = ""   # URL-safe base64, 프론트에 전달
+    VAPID_PRIVATE_KEY: str   = ""   # PEM 형식 (-----BEGIN PRIVATE KEY-----)
+    VAPID_SUBJECT: str       = "mailto:help@alitrack.kr"
+
     # ── Redis (Rate Limit·캐시 저장소) ────────────────────────────
     REDIS_URL: str           = "redis://localhost:6379/0"
 

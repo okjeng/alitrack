@@ -27,6 +27,7 @@ from src.routes.proxy           import router as proxy_router
 from src.routes.auth            import router as auth_router
 from src.routes.scheduler       import router as scheduler_router
 from src.routes.alerts          import router as alerts_router
+from src.routes.push            import router as push_router
 from src.config.settings        import settings
 
 # JWT_SECRET 미설정 시 서버 시작 거부 — 빈 시크릿으로 토큰 위조 방지
@@ -104,6 +105,7 @@ app.include_router(proxy_router,     prefix="/api/ali",       tags=["ali-proxy"]
 app.include_router(auth_router,      prefix="/api/auth",      tags=["auth"])
 app.include_router(scheduler_router, prefix="/api/scheduler", tags=["scheduler"])
 app.include_router(alerts_router,    prefix="/api/alerts",    tags=["alerts"])
+app.include_router(push_router,      prefix="/api/push",      tags=["push"])
 
 # ─── 글로벌 예외 핸들러 ───────────────────────────────────────────
 @app.exception_handler(Exception)

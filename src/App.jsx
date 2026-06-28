@@ -571,38 +571,79 @@ const ShareSheet = ({ product, onClose, showToast }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// 모달: 최저가 알림 신청 (미회원 포함, 이메일 불필요)
-// ═══════════════════════════════════════════════════════════════════
-const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
-  const [step, setStep]     = useState("price");
-  const [target, setTarget] = useState(String(Math.round((product?.price || 0) * 0.9)));
-  const [loading, setLoad]  = useState(false);
-  const isEmailUser = user?.provider === "email";
-  const curPrice    = product?.price || 0;
+// 웹 푸시 구독 헬퍼
+async function subscribePush() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+  try {
+    // VAPID 공개 키 조회
+    const res  = await fetch(`${API_BASE}/api/push/vapid-public`);
+    if (!res.ok) return null;
+    const { public_key } = await res.json();
 
-  const submit = async () => {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: public_key,
+    });
+    const json  = sub.toJSON();
+    const auth  = btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth"))));
+    const p256dh = btoa(String.fromCharCode(...new Uint8Array(sub.getKey("p256dh"))));
+    return { endpoint: json.endpoint, auth, p256dh };
+  } catch { return null; }
+}
+
+// 모달: 최저가 알림 신청 (웹 푸시 방식)
+// ═══════════════════════════════════════════════════════════════════
+const AlertModal = ({ product, user, onClose, showToast }) => {
+  const [step, setStep]       = useState("price");
+  const [target, setTarget]   = useState(String(Math.round((product?.price || 0) * 0.9)));
+  const [loading, setLoad]    = useState(false);
+  const [pushGranted, setPushGranted] = useState(false);
+  const curPrice = product?.price || 0;
+  const targetPrice = useRef(0);
+
+  const goToPush = () => {
     const price = parseInt(target.replace(/[^0-9]/g,""), 10);
     if (!price || price <= 0) { showToast("올바른 가격을 입력해주세요."); return; }
+    targetPrice.current = price;
+    // 항상 로컬 저장 (웹 푸시 백업)
+    saveLocalAlert({ product_id: product.id, product_name: product.name, image: product.image,
+                     target_price: price, current_price: curPrice, saved_at: new Date().toISOString() });
+    setStep("push");
+  };
 
-    if (isEmailUser) {
-      // 이메일 회원 → 백엔드 저장
-      setLoad(true);
-      try {
-        const tok = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
-        const res = await fetch(`${API_BASE}/api/alerts/subscribe`, {
+  const requestPush = async () => {
+    setLoad(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        setPushGranted(false);
+        setStep("done");
+        return;
+      }
+      const sub = await subscribePush();
+      if (sub) {
+        // 백엔드에 구독 정보 + 목표가 전송
+        await fetch(`${API_BASE}/api/push/subscribe`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
-          body: JSON.stringify({ product_id: product.id, product_name: product.name, target_price: price }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint:     sub.endpoint,
+            auth:         sub.auth,
+            p256dh:       sub.p256dh,
+            product_id:   String(product.id),
+            target_price: targetPrice.current,
+            guest_id:     getGuestId(),
+          }),
         });
-        if (!res.ok) { const d = await res.json(); showToast(d.detail || "신청 실패"); return; }
-      } catch { showToast("네트워크 오류"); return; }
-      finally { setLoad(false); }
-    } else {
-      // 게스트 → localStorage 저장
-      saveLocalAlert({ product_id: product.id, product_name: product.name, image: product.image, target_price: price, current_price: curPrice, saved_at: new Date().toISOString() });
-    }
+        setPushGranted(true);
+      }
+    } catch { /* 권한 거부 등 무시 */ }
+    finally { setLoad(false); }
     setStep("done");
   };
+
+  const skipPush = () => setStep("done");
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onClose}>
@@ -615,7 +656,7 @@ const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
         {step === "price" && (
           <>
             <p className="text-lg font-extrabold text-gray-900 mb-1">최저가 알림 신청 🔔</p>
-            <p className="text-xs text-gray-400 mb-4">목표 가격 도달 시 바로 알려드려요</p>
+            <p className="text-xs text-gray-400 mb-4">목표 가격 도달 시 브라우저로 바로 알려드려요</p>
             <div className="bg-[#F7F7F8] rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
               <span className="text-xs text-gray-400">현재 가격</span>
               <span className="text-base font-extrabold text-gray-900">{fmt(curPrice)}</span>
@@ -624,52 +665,61 @@ const AlertModal = ({ product, user, onClose, showToast, showLogin }) => {
             <div className="flex items-center border-2 border-orange-400 rounded-2xl px-4 mb-1 bg-white">
               <input type="number" value={target} onChange={e=>setTarget(e.target.value)}
                 className="flex-1 py-3.5 text-xl font-bold outline-none bg-transparent"
-                onKeyDown={e=>e.key==="Enter" && submit()} />
+                onKeyDown={e=>e.key==="Enter" && goToPush()} />
               <span className="text-sm text-gray-400 font-bold ml-1">원</span>
             </div>
-            <p className="text-[11px] text-gray-400 mb-5">현재보다 낮게 설정해주세요 (예: {fmt(Math.round(curPrice*0.9))})</p>
-            <button onClick={submit} disabled={loading}
-              className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition disabled:opacity-60">
-              {loading ? "신청 중..." : "알림 신청하기"}
+            <p className="text-[11px] text-gray-400 mb-5">현재보다 낮게 설정하세요 (예: {fmt(Math.round(curPrice*0.9))})</p>
+            <button onClick={goToPush}
+              className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
+              다음
             </button>
-            {!user && <p className="text-[11px] text-gray-400 text-center mt-3">가입 없이 바로 신청 가능</p>}
+            <p className="text-[11px] text-gray-400 text-center mt-3">가입 없이 바로 신청 가능</p>
+          </>
+        )}
+
+        {step === "push" && (
+          <>
+            <div className="text-center mb-5">
+              <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3">🔔</div>
+              <p className="text-lg font-extrabold text-gray-900">브라우저 알림 허용</p>
+              <p className="text-xs text-gray-400 mt-1">
+                목표가 <span className="text-orange-500 font-bold">{fmt(targetPrice.current)}</span> 도달 시 바로 알려드려요
+              </p>
+            </div>
+            <div className="bg-[#FFF7ED] rounded-2xl p-4 mb-5 space-y-2">
+              {["📱 앱 설치 없이 브라우저 알림","🔕 언제든 설정에서 알림 끄기 가능","✅ iPhone·갤럭시·PC 모두 지원"].map(t=>(
+                <p key={t} className="text-xs text-gray-700">{t}</p>
+              ))}
+            </div>
+            <button onClick={requestPush} disabled={loading}
+              className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition disabled:opacity-60 mb-2">
+              {loading ? "처리 중..." : "알림 허용하기"}
+            </button>
+            <button onClick={skipPush}
+              className="w-full py-3 rounded-2xl text-sm font-semibold text-gray-400 bg-gray-50 active:bg-gray-100 transition">
+              나중에 허용
+            </button>
           </>
         )}
 
         {step === "done" && (
           <>
             <div className="text-center mb-5">
-              <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3">🔔</div>
-              <p className="text-lg font-extrabold text-gray-900">알림이 등록됐어요!</p>
+              <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3">
+                {pushGranted ? "🔔" : "✅"}
+              </div>
+              <p className="text-lg font-extrabold text-gray-900">
+                {pushGranted ? "알림이 설정됐어요!" : "알림이 등록됐어요!"}
+              </p>
               <p className="text-xs text-gray-400 mt-1">
-                {isEmailUser ? "이메일 계정에 저장됐어요" : `이 기기에 저장됐어요 (ID: ${getGuestId()})`}
+                {pushGranted
+                  ? `목표가 ${fmt(targetPrice.current)} 도달 시 브라우저로 알림을 드려요`
+                  : "이 기기의 가격기록에 저장했어요"}
               </p>
             </div>
-
-            {!isEmailUser && (
-              <div className="bg-[#EFF6FF] border border-blue-200 rounded-2xl p-4 mb-4">
-                <p className="text-sm font-extrabold text-gray-900 mb-0.5">📧 이메일 회원가입하면</p>
-                <p className="text-xs text-gray-500 mb-3">소중한 기록이 안전하게 보관돼요</p>
-                <div className="space-y-1.5 mb-4">
-                  {[
-                    "📈 가격기록 — 영구 보관",
-                    "❤️ 관심상품 — 영구 저장",
-                    "🔄 기기 변경 시 데이터 연동",
-                    "📬 최저가 달성 시 이메일 알림",
-                  ].map(t=>(
-                    <p key={t} className="text-[12px] text-gray-700 flex items-center gap-1.5">{t}</p>
-                  ))}
-                </div>
-                <button onClick={()=>{ onClose(); setTimeout(showLogin, 80); }}
-                  className="w-full py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 bg-blue-500 text-white">
-                  이메일로 가입하기 →
-                </button>
-              </div>
-            )}
-
             <button onClick={onClose}
-              className="w-full py-3 rounded-2xl text-sm font-semibold text-gray-500 bg-gray-50 active:bg-gray-100 transition">
-              {isEmailUser ? "확인" : "나중에"}
+              className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
+              확인
             </button>
           </>
         )}

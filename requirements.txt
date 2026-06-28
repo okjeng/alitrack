@@ -21,5 +21,5 @@ redis[asyncio]==5.0.4
 asyncpg==0.29.0
 sqlalchemy[asyncio]==2.0.29
 
-# 비밀번호 해싱 (이메일 회원가입)
-passlib[bcrypt]==1.7.4
+# Web Push (VAPID)
+pywebpush==2.0.0
