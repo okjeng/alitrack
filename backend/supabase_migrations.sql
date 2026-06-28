@@ -2,29 +2,24 @@
 -- Supabase SQL Editor에서 실행하세요: https://supabase.com/dashboard/project/tpuftqwsrfrvujtffzbh/sql
 
 -- ─── users 테이블 ───────────────────────────────────────────────────
--- 소셜 로그인(카카오/네이버/구글) 사용자 저장
 CREATE TABLE IF NOT EXISTS public.users (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    provider      TEXT NOT NULL,             -- 'kakao' | 'naver' | 'google'
-    provider_id   TEXT NOT NULL,             -- 소셜 서비스의 고유 사용자 ID
+    provider      TEXT NOT NULL,
+    provider_id   TEXT NOT NULL,
     email         TEXT NOT NULL,
     nickname      TEXT DEFAULT '',
     profile_image TEXT DEFAULT '',
     last_login    TIMESTAMPTZ DEFAULT now(),
     created_at    TIMESTAMPTZ DEFAULT now(),
-    UNIQUE (provider, provider_id)           -- upsert 키: 같은 소셜 계정 중복 방지
+    UNIQUE (provider, provider_id)
 );
 
--- RLS 활성화
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- service_role(백엔드 전용)은 RLS 우회 — 별도 정책 불필요
--- 아래는 선택적: 사용자 본인만 자신의 데이터 조회 가능
 CREATE POLICY "users: own row only" ON public.users
-    FOR SELECT USING (true);  -- 백엔드에서만 service_role로 접근하므로 일단 허용
+    FOR SELECT USING (true);
 
--- ─── products 테이블 업데이트 ─────────────────────────────────────
--- 이미 존재하는 경우 skip
+-- ─── products 테이블 ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.products (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
@@ -59,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.wishlist (
 
 ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "wishlist: own rows" ON public.wishlist
-    FOR ALL USING (true);  -- 백엔드 service_role 전용
+    FOR ALL USING (true);
 
 -- ─── price_alerts 테이블 ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.price_alerts (
@@ -74,4 +69,69 @@ CREATE TABLE IF NOT EXISTS public.price_alerts (
 
 ALTER TABLE public.price_alerts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "price_alerts: own rows" ON public.price_alerts
-    FOR ALL USING (true);  -- 백엔드 service_role 전용
+    FOR ALL USING (true);
+
+-- ════════════════════════════════════════════════════════════════════
+-- ─── 인덱스 최적화 ────────────────────────────────────────────────
+-- ════════════════════════════════════════════════════════════════════
+
+-- price_history: 상품별 가격 조회 (시간순) — 가장 많이 사용되는 쿼리
+CREATE INDEX IF NOT EXISTS idx_price_history_product_time
+    ON public.price_history (product_id, recorded_at DESC);
+
+-- price_history: 특정 기간 이후 데이터 조회 (정리 스케줄러용)
+CREATE INDEX IF NOT EXISTS idx_price_history_recorded_at
+    ON public.price_history (recorded_at);
+
+-- wishlist: 사용자별 찜 목록 조회
+CREATE INDEX IF NOT EXISTS idx_wishlist_user
+    ON public.wishlist (user_id, created_at DESC);
+
+-- price_alerts: 활성 알림만 조회 (스케줄러용)
+CREATE INDEX IF NOT EXISTS idx_price_alerts_active
+    ON public.price_alerts (is_active, product_id) WHERE is_active = true;
+
+-- users: 소셜 로그인 조회 (provider + provider_id)
+CREATE INDEX IF NOT EXISTS idx_users_provider
+    ON public.users (provider, provider_id);
+
+-- ════════════════════════════════════════════════════════════════════
+-- ─── 중복 가격 저장 방지 함수 ─────────────────────────────────────
+-- 직전 가격과 동일하면 INSERT 하지 않음 (중복 데이터 제거)
+-- ════════════════════════════════════════════════════════════════════
+CREATE OR REPLACE FUNCTION insert_price_if_changed(
+    p_product_id TEXT,
+    p_price      INTEGER,
+    p_currency   TEXT DEFAULT 'KRW'
+) RETURNS VOID AS $$
+DECLARE
+    last_price INTEGER;
+BEGIN
+    SELECT price INTO last_price
+    FROM public.price_history
+    WHERE product_id = p_product_id
+    ORDER BY recorded_at DESC
+    LIMIT 1;
+
+    IF last_price IS DISTINCT FROM p_price THEN
+        INSERT INTO public.price_history (product_id, price, currency)
+        VALUES (p_product_id, p_price, p_currency);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ════════════════════════════════════════════════════════════════════
+-- ─── 오래된 가격 데이터 정리 (90일 이상) ─────────────────────────
+-- Supabase Cron 또는 수동 실행: 매주 1회 권장
+-- ════════════════════════════════════════════════════════════════════
+-- 실행: SELECT cleanup_old_price_history();
+CREATE OR REPLACE FUNCTION cleanup_old_price_history() RETURNS INTEGER AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    DELETE FROM public.price_history
+    WHERE recorded_at < NOW() - INTERVAL '90 days';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;

@@ -294,7 +294,8 @@ const ProductCard = ({ product:p, onProduct }) => {
       className="rounded-2xl bg-[#F7F7F8] overflow-hidden text-left active:opacity-75 transition w-full">
       <div className="relative">
         <img src={p.image} alt={p.shortName} loading="lazy"
-          className="w-full aspect-square object-cover" />
+          className="w-full aspect-square object-cover"
+          onError={e => { e.currentTarget.src = "https://placehold.co/320x320/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror = null; }} />
         <span className={`absolute top-2 left-2 text-[9px] font-extrabold text-white px-1.5 py-0.5 rounded-full ${TAG_COLORS[p.tag]||"bg-gray-500"}`}>
           {p.tag}
         </span>
@@ -1144,9 +1145,7 @@ const SellerCompareCard = ({ product }) => {
 // 쿠팡 파트너스 ID 발급 후 COUPANG_PARTNER_ID 만 교체하면 완료
 // ═══════════════════════════════════════════════════════════════════
 
-// TODO: 쿠팡 파트너스 가입 후 실제 ID로 교체
-// https://partners.coupang.com
-const COUPANG_PARTNER_ID = "YOUR_PARTNER_ID"; // ← 여기만 교체
+const COUPANG_PARTNER_ID = "AF4860198";
 
 const buildCoupangUrl = (keyword) => {
   const encoded = encodeURIComponent(keyword);
@@ -1260,7 +1259,8 @@ const DetailScreen = ({ product, onBack, showLogin, showToast }) => {
         {/* 이미지 */}
         <div className="bg-[#F7F7F8]">
           <img src={product.image.replace("320x320","500x500")} alt={product.shortName}
-            loading="lazy" className="w-full max-h-72 object-contain mx-auto" />
+            loading="lazy" className="w-full max-h-72 object-contain mx-auto"
+            onError={e => { e.currentTarget.src = "https://placehold.co/500x500/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror = null; }} />
         </div>
 
         <div className="px-4 pt-4 space-y-4">
@@ -1388,7 +1388,7 @@ const PrivacyScreen = ({ onBack }) => (
         { title:"1. 개인정보 수집 항목 및 목적", body:"AliTrack(이하 \"서비스\")은 아래와 같은 목적으로 최소한의 개인정보를 수집합니다.\n\n• 소셜 로그인(카카오·네이버·구글): 이메일 주소, 닉네임, 프로필 이미지\n• 서비스 이용: 관심 상품 목록, 알림 설정 정보, 서비스 이용 기록\n\n수집 목적: 회원 식별, 최저가 알림 발송, 찜 목록 및 가격 기록 보관, 서비스 품질 개선" },
         { title:"2. 개인정보 보유 및 이용 기간", body:"• 회원 탈퇴 시 즉시 파기\n• 전자상거래법: 계약·청약철회 기록 5년, 대금결제 기록 5년\n• 통신비밀보호법: 로그인 기록 3개월" },
         { title:"3. 개인정보 제3자 제공", body:"서비스는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다.\n단, 이용자가 사전에 동의한 경우 또는 법령의 규정에 의한 경우 예외로 합니다.\n\n※ 알리익스프레스 제휴 링크 클릭 시 해당 사이트의 개인정보처리방침이 적용됩니다." },
-        { title:"4. 개인정보 처리 위탁", body:"• Supabase Inc. — 데이터베이스 저장 및 관리\n• Vercel Inc. — 웹 서비스 호스팅\n• 카카오(주) / 네이버(주) / Google LLC — 소셜 로그인 인증" },
+        { title:"4. 개인정보 처리 위탁", body:"• Supabase Inc. — 데이터베이스 저장 및 관리\n• Cloudflare Inc. — 웹 서비스 호스팅 (Cloudflare Pages)\n• Railway Corp. — 백엔드 서버 호스팅\n• 카카오(주) / 네이버(주) / Google LLC — 소셜 로그인 인증" },
         { title:"5. 이용자 권리", body:"이용자는 언제든지 개인정보 열람·수정·삭제·처리정지를 요청할 수 있습니다.\n행사 방법: 앱 내 [나의기록 → 계정 설정] 또는 privacy@alitrack.kr 로 요청\n\n• 개인정보분쟁조정위원회: www.kopico.go.kr (1833-6972)\n• 개인정보침해신고센터: privacy.kisa.or.kr (118)" },
         { title:"6. 쿠키 및 분석 도구", body:"• Google Analytics 4: 서비스 이용 통계 분석(익명 처리)\n• 카카오 픽셀: 마케팅 효과 측정\n브라우저 설정에서 쿠키를 거부할 수 있으나 일부 기능이 제한될 수 있습니다." },
         { title:"7. 개인정보 보호책임자", body:"이메일: privacy@alitrack.kr\n본 방침은 개인정보보호법, 정보통신망법 등 관련 법령을 준수하여 작성되었습니다." },
