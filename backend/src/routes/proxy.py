@@ -78,7 +78,7 @@ def _sanitize_product(raw: dict) -> dict:
         "rating":        float(str(raw.get("evaluate_rate", "0") or "0").replace("%", "") or 0),
         "reviews":       int(raw.get("lastest_volume", 0) or 0),
         "delivery_days": 5,
-        "affiliate_url": raw.get("promotion_link", raw.get("product_detail_url", "")),
+        "affiliate_url": raw.get("product_detail_url") or raw.get("promotion_link", ""),
     }
 
 
