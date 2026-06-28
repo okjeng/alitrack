@@ -636,6 +636,9 @@ const AlertModal = ({ product, user, onClose, showToast }) => {
             guest_id:     getGuestId(),
           }),
         });
+        // 나중에 해제할 때 쓸 endpoint를 로컬 알림에 같이 저장
+        const cur = getLocalAlerts().find(a => a.product_id === String(product.id));
+        if (cur) saveLocalAlert({ ...cur, push_endpoint: sub.endpoint });
         setPushGranted(true);
       }
     } catch { /* 권한 거부 등 무시 */ }
@@ -1975,9 +1978,18 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
 
   const toggleAlert = (item) => {
     if (hasAlert(item.productId)) {
+      const alert = getLocalAlerts().find(a => a.product_id === String(item.productId));
       removeLocalAlert(String(item.productId));
       showToast("알림이 해제됐어요");
-      setHist([...hist]); // re-render
+      setHist([...hist]);
+      // 백엔드 push_subscriptions 에서도 삭제
+      if (alert?.push_endpoint) {
+        fetch(`${API_BASE}/api/push/unsubscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: String(item.productId), endpoint: alert.push_endpoint }),
+        }).catch(() => {});
+      }
     } else {
       setAlertModal(item);
     }
@@ -2042,9 +2054,17 @@ const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
   const [alerts, setAlerts] = useState(getLocalAlerts);
 
   const remove = (productId) => {
+    const alert = getLocalAlerts().find(a => a.product_id === String(productId));
     removeLocalAlert(productId);
     setAlerts(getLocalAlerts());
     showToast("알림이 삭제됐어요");
+    if (alert?.push_endpoint) {
+      fetch(`${API_BASE}/api/push/unsubscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: String(productId), endpoint: alert.push_endpoint }),
+      }).catch(() => {});
+    }
   };
 
   return (

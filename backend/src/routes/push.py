@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from src.config.settings import settings
-from src.utils.supabase_client import sb_upsert, sb_select
+from src.utils.supabase_client import sb_upsert, sb_select, sb_delete
 
 logger  = logging.getLogger("alitrack.push")
 router  = APIRouter()
@@ -92,6 +92,20 @@ async def _send_one(endpoint: str, auth: str, p256dh: str, payload: dict) -> boo
 
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _blocking_send)
+
+
+@router.post("/unsubscribe")
+async def push_unsubscribe(body: PushSubscribeBody):
+    """푸시 알림 해제 — product_id + endpoint 기준으로 삭제"""
+    try:
+        await sb_delete("push_subscriptions", {
+            "product_id": f"eq.{body.product_id}",
+            "endpoint":   f"eq.{body.endpoint}",
+        })
+        logger.info(f"푸시 구독 해제: product={body.product_id}")
+    except Exception as e:
+        logger.warning(f"push unsubscribe 실패: {type(e).__name__}")
+    return {"ok": True}
 
 
 @router.post("/send")
