@@ -917,9 +917,26 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
 // ═══════════════════════════════════════════════════════════════════
 // 화면 2: 카테고리 피드
 // ═══════════════════════════════════════════════════════════════════
+const SORT_OPTIONS = [
+  { value:"default",    label:"인기순"   },
+  { value:"price_asc",  label:"낮은가격" },
+  { value:"price_desc", label:"높은가격" },
+  { value:"discount",   label:"할인율순" },
+];
+
 const CategoryFeedScreen = ({ cat, onBack, onProduct }) => {
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(()=>{ const t=setTimeout(()=>setIsLoading(false),700); return ()=>clearTimeout(t); },[cat.id]);
+  const [sort, setSort]           = useState(cat.sort || "default");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  useEffect(()=>{
+    setIsLoading(true);
+    setSort(cat.sort || "default");
+    const t = setTimeout(()=>setIsLoading(false), 700);
+    return ()=>clearTimeout(t);
+  },[cat.id]);
+
+  const currentSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || "인기순";
 
   return (
     <div className="pb-6">
@@ -932,7 +949,24 @@ const CategoryFeedScreen = ({ cat, onBack, onProduct }) => {
             <p className="text-base font-extrabold text-gray-900">{cat.icon} {cat.label}</p>
             {!isLoading && <p className="text-[11px] text-gray-400">계속 로드 중...</p>}
           </div>
-          <button className="ml-auto text-xs text-gray-400 bg-[#F7F7F8] px-3 py-1.5 rounded-xl">필터 ⚙️</button>
+          <div className="ml-auto relative">
+            <button onClick={()=>setShowSortMenu(v=>!v)}
+              className="text-xs text-gray-600 font-semibold bg-[#F7F7F8] px-3 py-1.5 rounded-xl flex items-center gap-1">
+              {currentSortLabel} ⚙️
+            </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-9 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden min-w-[110px]">
+                {SORT_OPTIONS.map(o=>(
+                  <button key={o.value}
+                    onClick={()=>{ setSort(o.value); setShowSortMenu(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition
+                      ${sort===o.value ? "bg-orange-50 text-orange-500" : "text-gray-700 active:bg-gray-50"}`}>
+                    {sort===o.value ? "✓ " : ""}{o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="px-4 pt-4">
@@ -941,7 +975,7 @@ const CategoryFeedScreen = ({ cat, onBack, onProduct }) => {
             {Array(6).fill(0).map((_,i)=><SkeletonCard key={i}/>)}
           </div>
         ) : (
-          <InfiniteProductGrid onProduct={onProduct} keyword={cat.keyword||""} sort={cat.sort||"default"} />
+          <InfiniteProductGrid key={`${cat.id}-${sort}`} onProduct={onProduct} keyword={cat.keyword||""} sort={sort} />
         )}
         <LegalFooter />
       </div>
@@ -1280,14 +1314,14 @@ const fetchSellerList = async (productName, productId) => {
   const keyword = extractKeyword(productName);
   if (!keyword) return [];
   try {
-    const params = new URLSearchParams({ page: 1, size: 8, sort: "price_asc", keyword });
+    const params = new URLSearchParams({ page: 1, size: 12, sort: "price_asc", keyword });
     const res  = await fetch(`${API_BASE}/api/ali/products?${params}`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.products || [])
-      .filter(p => String(p.id) !== String(productId))
-      .slice(0, 3)
-      .map(mapProduct);
+      .map(mapProduct)
+      .filter(p => p.price >= 500 && String(p.id) !== String(productId))
+      .slice(0, 3);
   } catch {
     return [];
   }
