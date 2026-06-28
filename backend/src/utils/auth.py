@@ -21,12 +21,13 @@ from src.config.settings import settings
 logger = logging.getLogger("alitrack.auth")
 
 
-def create_access_token(user_id: str, email: str, provider: str = "") -> str:
+def create_access_token(user_id: str, email: str, provider: str = "", nickname: str = "") -> str:
     """Access Token 생성 (짧은 만료: 1시간)"""
     payload = {
         "sub":      user_id,
         "email":    email,
         "provider": provider,
+        "nickname": nickname,
         "type":     "access",
         "iat":      datetime.now(timezone.utc),
         "exp":      datetime.now(timezone.utc) + timedelta(hours=1),

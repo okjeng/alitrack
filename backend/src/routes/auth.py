@@ -96,6 +96,7 @@ async def get_me(request: Request):
             "user_id":  payload["sub"],
             "email":    payload.get("email"),
             "provider": payload.get("provider", ""),
+            "nickname": payload.get("nickname", ""),
             "logged_in": True,
         }
     except Exception:
@@ -108,13 +109,14 @@ async def kakao_login():
     if not settings.KAKAO_CLIENT_ID:
         raise HTTPException(status_code=503, detail="카카오 로그인 준비 중입니다.")
     state = secrets.token_urlsafe(32)
-    # account_email: 카카오 개발자 콘솔에서 "카카오계정(이메일)" 동의항목 활성화 필요
+    # account_email 스코프: 카카오 비즈니스 앱 심사 통과 전까지 사용 불가
+    # 현재는 nickname + profile_image만 요청
     url = "https://kauth.kakao.com/oauth/authorize?" + urlencode({
         "client_id":     settings.KAKAO_CLIENT_ID,
         "redirect_uri":  settings.KAKAO_REDIRECT_URI,
         "response_type": "code",
         "state":         state,
-        "scope":         "profile_nickname,account_email",
+        "scope":         "profile_nickname,profile_image",
     })
     resp = RedirectResponse(url=url)
     resp.set_cookie("oauth_state", state, max_age=600, httponly=False, secure=True, samesite="none")
@@ -163,7 +165,7 @@ async def kakao_callback(
         logger.error(f"카카오 로그인 오류: {_mask_err(e)}")
         raise HTTPException(status_code=502, detail="카카오 로그인에 실패했습니다.")
 
-    # ── 카카오 응답 전체 로그 (이메일 매핑 디버그용) ──────────────────
+    # ── 카카오 응답 로그 (진단용) ─────────────────────────────────────
     provider_id = str(ud.get("id", ""))
     account     = ud.get("kakao_account", {})
     profile     = account.get("profile", {})
@@ -175,39 +177,37 @@ async def kakao_callback(
         f"email_needs_agreement={account.get('email_needs_agreement')} | "
         f"email={account.get('email', '(없음)')} | "
         f"nickname={profile.get('nickname', '(없음)')} | "
-        f"kakao_account_keys={list(account.keys())}"
+        f"top_keys={list(ud.keys())}"
     )
 
-    # ── 이메일 추출 — 동의 여부 확인 후 안전하게 매핑 ─────────────────
-    email = ""
-    has_email         = account.get("has_email", False)
-    needs_agreement   = account.get("email_needs_agreement", True)
-    kakao_email       = account.get("email", "")
+    if not provider_id:
+        logger.error(f"[Kakao] provider_id 없음. 응답: {ud}")
+        raise HTTPException(status_code=502, detail="카카오 사용자 정보를 가져오지 못했습니다.")
+
+    # ── 이메일 추출 — 심사 통과 전 이메일 동의항목 사용 불가 ──────────
+    # 이메일이 있으면 사용, 없으면 내부 식별자 (표시 안 함)
+    has_email       = account.get("has_email", False)
+    needs_agreement = account.get("email_needs_agreement", True)
+    kakao_email     = account.get("email", "")
 
     if has_email and not needs_agreement and kakao_email:
         email = kakao_email
         logger.info(f"[Kakao 이메일 확정] {email}")
     else:
-        # 이메일 동의 안 했거나 없음 — @alitrack.kr 가짜 주소 저장 금지
-        # provider_id 기반 내부 식별자로 대체 (표시용으로만 사용)
-        if provider_id:
-            email = f"kakao_{provider_id}@kakao.local"
-        else:
-            logger.error(f"[Kakao] provider_id 없음. 응답 전체: {ud}")
-            raise HTTPException(status_code=502, detail="카카오 사용자 정보를 가져오지 못했습니다.")
-        logger.warning(
-            f"[Kakao 이메일 없음] "
-            f"has_email={has_email}, needs_agreement={needs_agreement}, "
-            f"kakao_email='{kakao_email}' → 내부 식별자 사용: {email}"
-        )
+        # @alitrack.kr 가짜 주소 저장 금지 → provider_id 기반 내부 식별자
+        email = f"kakao_{provider_id}@kakao.local"
+        logger.info(f"[Kakao 이메일 없음] 내부 식별자 사용: {email}")
 
     nickname = profile.get("nickname", "")
     avatar   = profile.get("profile_image_url", "")
 
-    logger.info(f"[Kakao 최종] provider_id={provider_id}, email={email}, nickname={nickname}")
+    logger.info(f"[Kakao 최종] provider_id={provider_id} | email={email} | nickname={nickname}")
 
     user_id = await _upsert_user("kakao", provider_id, email, nickname, avatar)
-    return _success_redirect(Response(), user_id, email, "kakao")
+    at = create_access_token(user_id, email, "kakao", nickname)
+    resp = RedirectResponse(url=f"{settings.FRONTEND_URL}#tok={at}")
+    resp.delete_cookie("oauth_state")
+    return resp
 
 
 # ─── 네이버 ─────────────────────────────────────────────────────────

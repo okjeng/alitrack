@@ -1991,7 +1991,10 @@ const EmptyMypage = ({ onLogin }) => <GuestMypage onLogin={onLogin}/>;
 const LoggedInMypage = ({ user, onLogout }) => {
   const isKakao = user?.provider === "kakao";
   const email   = user?.email || "";
-  const nick    = email.includes("@") ? email.split("@")[0] : email;
+  const isInternalEmail = email.endsWith("@kakao.local") || email.endsWith("@alitrack.kr");
+  // nickname 우선, 없으면 이메일 앞부분, 내부 주소면 "카카오 사용자"
+  const nick = user?.nickname || (isInternalEmail ? "카카오 사용자" : (email.split("@")[0] || "사용자"));
+  const displayEmail = isInternalEmail ? "" : email;
 
   return (
     <div className="px-4 py-6 space-y-4">
@@ -2001,7 +2004,7 @@ const LoggedInMypage = ({ user, onLogout }) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-extrabold text-gray-900 truncate">{nick}</p>
-          <p className="text-xs text-gray-400 truncate">{email}</p>
+          <p className="text-xs text-gray-400 truncate">{displayEmail}</p>
           <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
                 style={{background: isKakao ? "#FEE500":"#F7F7F8", color: isKakao ? "#181600":"#555"}}>
             {isKakao ? "💬 카카오 회원" : "👤 게스트"}
