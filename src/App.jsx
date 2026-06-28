@@ -104,7 +104,7 @@ const generateDummyPage = (page) => {
 // 기타 더미 데이터
 // ═══════════════════════════════════════════════════════════════════
 const CATEGORIES = [
-  { id:"domestic",  icon:"🏠", label:"한국배송",  keyword:"shipping",    sort:"default"   },
+  { id:"domestic",  icon:"🏠", label:"한국배송",  keyword:"sport",       sort:"default"   },
   { id:"cheap",     icon:"💸", label:"초저가템",  keyword:"",            sort:"price_asc" },
   { id:"popular",   icon:"🏆", label:"인기랭킹",  keyword:"",            sort:"default"   },
   { id:"reviewed",  icon:"⭐", label:"리뷰많은",  keyword:"gadget",      sort:"default"   },
