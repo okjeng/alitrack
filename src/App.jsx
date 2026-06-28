@@ -780,13 +780,28 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
   const [bannerIdx, setBannerIdx] = useState(0);
   const [catLoading, setCatLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
-  const isPaused = useRef(false);
+  const isPaused    = useRef(false);
   const bannerTimer = useRef(null);
+  const touchStartX = useRef(null);
 
   useEffect(()=>{
     bannerTimer.current = setInterval(()=>{ if(!isPaused.current) setBannerIdx(i=>(i+1)%PROMO_BANNERS.length); }, 3500);
     return ()=>clearInterval(bannerTimer.current);
   },[]);
+
+  const handleBannerTouchStart = (e) => {
+    isPaused.current = true;
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleBannerTouchEnd = (e) => {
+    isPaused.current = false;
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 40) return;
+    if (delta < 0) setBannerIdx(i => (i + 1) % PROMO_BANNERS.length);
+    else           setBannerIdx(i => (i - 1 + PROMO_BANNERS.length) % PROMO_BANNERS.length);
+  };
 
   const handleCategory = (cat) => {
     setActiveCat(cat.id); setCatLoading(true);
@@ -859,7 +874,7 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
           {/* 슬라이드 배너 */}
           <div className="rounded-3xl overflow-hidden cursor-pointer"
                onMouseEnter={()=>{isPaused.current=true;}} onMouseLeave={()=>{isPaused.current=false;}}
-               onTouchStart={()=>{isPaused.current=true;}} onTouchEnd={()=>{isPaused.current=false;}}
+               onTouchStart={handleBannerTouchStart} onTouchEnd={handleBannerTouchEnd}
                onClick={()=>onCategory({id:b.id, icon:b.badge.charAt(0), label:b.title, keyword:b.keyword, sort:b.sort})}>
             <div style={{background:b.bg, transition:"background 0.5s"}}>
               <div className="p-5 text-white">
