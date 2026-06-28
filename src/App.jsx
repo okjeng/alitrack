@@ -207,10 +207,11 @@ const savePriceHistory = (product) => {
 };
 
 const ALI_TRACKING_ID = "alitrack_kr";
-// promotion_link이 있으면 그대로, 없으면 tracking_id 파라미터 포함 URL 사용
-const buildAffiliateUrl = (productId, promotionLink) =>
-  promotionLink ||
-  `https://www.aliexpress.com/item/${productId}.html?aff_fcid=${ALI_TRACKING_ID}&aff_platform=portals-tool&sk=${ALI_TRACKING_ID}&aff_trace_key=${ALI_TRACKING_ID}`;
+// s.click.aliexpress.com은 generic 페이지로 이동 — product_detail_url 또는 직접 상품 URL 사용
+const buildAffiliateUrl = (productId, affiliateUrl) => {
+  if (affiliateUrl && !affiliateUrl.includes("s.click.aliexpress.com")) return affiliateUrl;
+  return `https://ko.aliexpress.com/item/${productId}.html?aff_fcid=${ALI_TRACKING_ID}&aff_platform=portals-tool&sk=${ALI_TRACKING_ID}&aff_trace_key=${ALI_TRACKING_ID}`;
+};
 
 const copyToClipboard = async (text) => {
   if (navigator.clipboard && window.isSecureContext) {
