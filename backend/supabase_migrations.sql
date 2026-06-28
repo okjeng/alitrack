@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "products: public read" ON public.products FOR SELECT USING (true);
+CREATE POLICY "products: public read" ON public.products FOR SELECT USING (true);
 
 -- ─── price_history 테이블 ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.price_history (
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.price_history (
 );
 
 ALTER TABLE public.price_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "price_history: public read" ON public.price_history FOR SELECT USING (true);
+CREATE POLICY "price_history: public read" ON public.price_history FOR SELECT USING (true);
 
 -- ─── wishlist 테이블 ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.wishlist (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.wishlist (
 );
 
 ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wishlist: own rows" ON public.wishlist
+CREATE POLICY "wishlist: own rows" ON public.wishlist
     FOR ALL USING (true);
 
 -- ─── price_alerts 테이블 ──────────────────────────────────────────
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.price_alerts (
 );
 
 ALTER TABLE public.price_alerts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "price_alerts: own rows" ON public.price_alerts
+CREATE POLICY "price_alerts: own rows" ON public.price_alerts
     FOR ALL USING (true);
 
 -- ════════════════════════════════════════════════════════════════════
