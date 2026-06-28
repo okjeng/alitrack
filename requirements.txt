@@ -20,3 +20,6 @@ redis[asyncio]==5.0.4
 # DB (PostgreSQL)
 asyncpg==0.29.0
 sqlalchemy[asyncio]==2.0.29
+
+# 비밀번호 해싱 (이메일 회원가입)
+passlib[bcrypt]==1.7.4
