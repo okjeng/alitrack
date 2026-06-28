@@ -780,6 +780,7 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
   const [bannerIdx, setBannerIdx] = useState(0);
   const [catLoading, setCatLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const isPaused    = useRef(false);
   const bannerTimer = useRef(null);
   const touchStartX = useRef(null);
@@ -808,6 +809,12 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
     setTimeout(()=>{ setCatLoading(false); onCategory(cat); }, 600);
   };
 
+  const handleSearch = () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    onCategory({ id: "search", icon: "🔍", label: `"${q}" 검색결과`, keyword: q, sort: "default" });
+  };
+
   const copyCode = async (code) => {
     try { await copyToClipboard(code); showToast(`"${code}" 코드가 복사되었습니다!`); }
     catch { showToast("복사 실패. 직접 코드를 선택해주세요."); }
@@ -818,11 +825,20 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
   return (
     <div className="px-4 pt-4 pb-6 space-y-5">
       {/* 검색창 */}
-      <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
-        <input readOnly placeholder="알리 꿀템 검색 또는 링크 붙여넣기"
-          onClick={()=>showToast("🔍 검색 기능을 준비 중이에요!")}
-          className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-600 placeholder-gray-400 outline-none cursor-pointer" />
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSearch()}
+            placeholder="알리 꿀템 검색"
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-800 placeholder-gray-400 outline-none" />
+        </div>
+        <button onClick={handleSearch}
+          className="px-4 py-3.5 rounded-2xl bg-orange-500 active:bg-orange-600 text-white text-sm font-bold transition flex-shrink-0">
+          검색
+        </button>
       </div>
 
       {/* 탭 */}
@@ -2080,7 +2096,17 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
   const vsAllLow  = item.price - allLow;
   const isAtLow   = vsAllLow <= 0;
   const affiliate = buildAffiliateUrl(item.productId || safeId, item.affiliate_url);
-  const normalized = useMemo(() => ({ ...item, id: safeId }), [item, safeId]);
+  const normalized = useMemo(() => ({
+    shortName:    item.name || "",
+    tag:          "",
+    discount:     0,
+    rating:       0,
+    reviews:      0,
+    deliveryDays: 5,
+    orig:         item.orig || Math.round((item.price || 0) * 1.4),
+    ...item,
+    id: safeId,
+  }), [item, safeId]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-50/80">
