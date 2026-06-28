@@ -1049,8 +1049,8 @@ const buildTimeline = (hist, currentPrice) => {
       date:  pt.date,
       price: pt.price,
       label: isMin ? "역대최저" : isMax ? "최고가" : isUp ? "가격상승" : isDown ? "가격하락" : "변동없음",
-      color: isMin ? "#EF4444" : isMax ? "#6366F1" : isUp ? "#3B82F6" : "#EF4444",
-      icon:  isMin ? "🏆" : isMax ? "📈" : isUp ? "▲" : "▼",
+      color: isMin ? "#EF4444" : isMax ? "#6366F1" : isUp ? "#3B82F6" : isDown ? "#EF4444" : "#9CA3AF",
+      icon:  isMin ? "🏆" : isMax ? "📈" : isUp ? "▲" : isDown ? "▼" : "─",
     });
   });
   return events;
@@ -2072,13 +2072,13 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
       <div className="px-3 pt-3 pb-0">
         {/* 상단: 이미지 + 정보 + 벨 */}
         <div className="flex items-start gap-2.5">
-          <button className="flex-shrink-0" onClick={() => onProduct(item)}>
+          <button className="flex-shrink-0" onClick={() => onProduct(normalized)}>
             {item.image
               ? <img src={item.image} alt="" className="w-11 h-11 rounded-xl object-cover bg-gray-100"/>
               : <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-lg">🛒</div>
             }
           </button>
-          <button className="flex-1 min-w-0 text-left" onClick={() => onProduct(item)}>
+          <button className="flex-1 min-w-0 text-left" onClick={() => onProduct(normalized)}>
             <p className="text-[11px] text-gray-400 line-clamp-1 leading-tight">{item.name || "상품명 없음"}</p>
             <p className="text-[15px] font-extrabold text-gray-900 mt-0.5 leading-tight">{fmt(item.price)}</p>
             {isAtLow ? (
