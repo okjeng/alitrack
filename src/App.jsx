@@ -775,7 +775,7 @@ const AlertModal = ({ product, user, onClose, showToast }) => {
 // ═══════════════════════════════════════════════════════════════════
 // 화면 1: 홈
 // ═══════════════════════════════════════════════════════════════════
-const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
+const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, showInstallBanner, onDismissInstall }) => {
   const [tab, setTab]             = useState("hotdeal");
   const [bannerIdx, setBannerIdx] = useState(0);
   const [catLoading, setCatLoading] = useState(false);
@@ -824,6 +824,11 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-5">
+      {/* 앱 설치 배너 — Android: 자동설치 / iOS: 안내 */}
+      {showInstallBanner && (
+        <PwaInstallBanner onInstall={onInstall} onDismiss={onDismissInstall} />
+      )}
+
       {/* 검색창 */}
       <div className="relative flex gap-2">
         <div className="relative flex-1">
@@ -3156,11 +3161,19 @@ export default function App() {
   // ⑥ PWA 설치 상태
   const [pwaInstallable, setPwaInstallable] = useState(() => !!window.__pwa);
   const [showIosGuide, setShowIosGuide]     = useState(false);
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(
+    () => localStorage.getItem("alitrack_install_dismissed") === "1"
+  );
   const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches
                     || !!window.navigator.standalone;
-  // 설치 메뉴 표시 조건: 이미 설치됨(standalone)이 아니고, 설치 가능하거나 iOS인 경우
-  const showInstallMenu = !isStandalone && (pwaInstallable || isIOS);
+  const showInstallMenu   = !isStandalone && (pwaInstallable || isIOS);
+  const showInstallBanner = showInstallMenu && !installBannerDismissed;
+
+  const dismissInstallBanner = () => {
+    localStorage.setItem("alitrack_install_dismissed", "1");
+    setInstallBannerDismissed(true);
+  };
 
   useEffect(() => {
     const onInstallable = () => setPwaInstallable(true);
@@ -3313,7 +3326,7 @@ export default function App() {
 
   const renderScreen = () => {
     switch(screen){
-      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
+      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast} onInstall={handlePwaInstall} showInstallBanner={showInstallBanner} onDismissInstall={dismissInstallBanner}/>;
       case "feed":     return selCat?<CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/>:null;
       case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/>:null;
       case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct} showToast={showToast}/>;
