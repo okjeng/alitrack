@@ -125,15 +125,15 @@ async def kakao_login():
 
 @router.get("/kakao/callback")
 async def kakao_callback(
-    code:  str = Query(...),
+    code:  str | None = Query(default=None),
     state: str = Query(default=""),
     oauth_state: str | None = Cookie(default=None),
     error: str | None = Query(default=None),
     error_description: str | None = Query(default=None),
 ):
-    if error:
+    if error or not code:
         logger.error(f"카카오 OAuth 에러: {error} - {error_description}")
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=fail&reason={error}")
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=fail&reason={error or 'no_code'}")
 
     if oauth_state and state and not secrets.compare_digest(state, oauth_state):
         logger.warning(f"CSRF state 불일치 (계속 진행): got={state[:8]}.. expected={oauth_state[:8]}..")
