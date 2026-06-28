@@ -1,4 +1,4 @@
-const CACHE = "alitrack-v4";
+const CACHE = "alitrack-v5";
 const PRECACHE = ["/", "/index.html"];
 
 self.addEventListener("install", e =>
