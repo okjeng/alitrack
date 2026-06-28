@@ -562,22 +562,33 @@ const EmailAuthModal = ({ onDismiss, onLoginSuccess }) => {
 
 // 모달: 공유 (모든 사용자 가능)
 const ShareSheet = ({ product, onClose, showToast }) => {
-  const url  = `https://alitrack.kr/p/${product.id}`;
-  const text = encodeURIComponent(`[AliTrack] ${product.name}\n${url}`);
+  const url = `https://alitrack.kr/p/${product.id}`;
+
+  const shareNative = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, text: `[AliTrack] ${product.name}`, url });
+        showToast("공유되었어요!");
+      } catch (e) {
+        if (e.name !== "AbortError") showToast("공유에 실패했어요.");
+      }
+    } else {
+      await copyToClipboard(url);
+      showToast("링크가 복사되었습니다!");
+    }
+    onClose();
+  };
 
   const copy = async () => {
     try { await copyToClipboard(url); showToast("링크가 복사되었습니다!"); }
     catch { showToast("복사 실패. 다시 시도해주세요."); }
     onClose();
   };
-  const shareKakao = () => {
-    window.open(`https://sharer.kakao.com/talk/friends/picker/link?app_key=&url=${encodeURIComponent(url)}`, "_blank");
-    onClose();
-  };
-  const shareSms = () => {
-    window.location.href = `sms:?body=${text}`;
-    onClose();
-  };
+
+  const actions = [
+    { label:"카카오·SNS 공유하기", icon:"💬", action: shareNative },
+    { label:"링크 복사하기",        icon:"🔗", action: copy },
+  ];
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center" onClick={onClose}>
@@ -587,11 +598,7 @@ const ShareSheet = ({ product, onClose, showToast }) => {
            onClick={e=>e.stopPropagation()}>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
         <p className="text-sm font-bold text-gray-900 mb-4">공유하기</p>
-        {[
-          {label:"카카오톡으로 공유",icon:"💬",action:shareKakao},
-          {label:"문자로 보내기",   icon:"📱",action:shareSms},
-          {label:"링크 복사하기",   icon:"🔗",action:copy},
-        ].map(i=>(
+        {actions.map(i=>(
           <button key={i.label} onClick={i.action}
             className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 transition text-sm font-semibold text-gray-800 mb-2">
             <span className="text-xl">{i.icon}</span>{i.label}
@@ -2521,7 +2528,7 @@ const IosInstallGuide = ({ onClose }) => (
 );
 
 // ─── 더보기 화면 ─────────────────────────────────────────────────────
-const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, onLogout, showToast, onInstall, showInstallMenu }) => {
+const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, onLogout, showToast, onInstall, isStandalone }) => {
   const [showNotif, setShowNotif] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
@@ -2577,7 +2584,7 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, on
               <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
               <span className="text-gray-400 text-xs">›</span>
             </button>
-            {showInstallMenu && (
+            {!isStandalone && (
               <button onClick={onInstall}
                 className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
                 <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -2609,8 +2616,15 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, on
           <div className="bg-[#F7F7F8] rounded-2xl overflow-hidden">
             <button
               onClick={() => {
-                if (window.ChannelIO) {
+                if (window.ChannelIOBooted) {
                   window.ChannelIO('openChat');
+                } else if (window.ChannelIO) {
+                  // SDK 로딩 중 — 잠시 후 재시도
+                  setTimeout(() => {
+                    if (window.ChannelIOBooted) window.ChannelIO('openChat');
+                    else showToast("채팅 연결 중이에요. 잠시 후 다시 눌러주세요.");
+                  }, 2000);
+                  showToast("채팅을 연결하는 중이에요...");
                 } else {
                   showToast("채팅 기능을 불러오는 중이에요. 잠시 후 다시 눌러주세요.");
                 }
@@ -2951,6 +2965,24 @@ export default function App() {
   const scrollPositions             = useRef({});
   const mainRef                     = useRef(null);
 
+  // 딥링크 처리: /p/{product_id} → 상품 상세 화면으로 이동
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/p\/(\d+)$/);
+    if (!match) return;
+    const productId = match[1];
+    fetch(`${API_BASE}/api/ali/product/${productId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.id) {
+          setSelProduct(mapProduct(data));
+          setScreen("detail");
+        }
+      })
+      .catch(() => {});
+    // URL을 루트로 교체 (뒤로가기 시 홈으로)
+    window.history.replaceState({}, "", "/");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ⑤ 온보딩 — 첫 방문자에게만 표시
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return !localStorage.getItem("alitrack_onboarded"); }
@@ -3139,7 +3171,7 @@ export default function App() {
           {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
-      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} onHowTo={()=>goTo("howto")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={handlePwaInstall} showInstallMenu={showInstallMenu}/>;
+      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} onHowTo={()=>goTo("howto")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={handlePwaInstall} isStandalone={isStandalone}/>;
       // 법적/안내 페이지
       case "howto":    return <HowToUseScreen onBack={goBack}/>;
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;

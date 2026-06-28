@@ -25,8 +25,10 @@ import App from './App.jsx'
   else { w.addEventListener('DOMContentLoaded', l); w.addEventListener('load', l); }
   w.ChannelIO('boot', {
     pluginKey: key,
-    hideChannelButtonOnBoot: true, // 기본 플로팅 버튼 숨김 — MoreScreen 버튼으로 직접 열기
+    hideChannelButtonOnBoot: true,
     language: 'ko',
+  }, function(error) {
+    window.ChannelIOBooted = !error;
   });
 })();
 
