@@ -419,10 +419,32 @@ const ProductCard = ({ product:p, onProduct }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
+// 검색어 관련성 기반 정렬
+// ═══════════════════════════════════════════════════════════════════
+const rankBySearch = (items, keyword) => {
+  if (!keyword) return items;
+  const kw = keyword.toLowerCase().trim();
+  const words = kw.split(/\s+/).filter(Boolean);
+  const score = (name) => {
+    const n = (name || "").toLowerCase();
+    if (n === kw) return 4;
+    if (n.startsWith(kw)) return 3;
+    if (n.includes(kw)) return 2;
+    const hits = words.filter(w => n.includes(w)).length;
+    return hits > 0 ? hits / words.length : 0;
+  };
+  return [...items].sort((a, b) => score(b.name) - score(a.name));
+};
+
+// ═══════════════════════════════════════════════════════════════════
 // ✅ 무한 스크롤 상품 그리드 (공용) — 홈 / 카테고리 피드 공유
 // ═══════════════════════════════════════════════════════════════════
-const InfiniteProductGrid = ({ onProduct, title, keyword, sort }) => {
+const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }) => {
   const { items, loading, initialized, loaderRef, hasMore } = useInfiniteProducts(keyword, sort);
+  const displayItems = useMemo(
+    () => rankKeyword ? rankBySearch(items, rankKeyword) : items,
+    [items, rankKeyword]
+  );
 
   return (
     <div>
@@ -436,7 +458,7 @@ const InfiniteProductGrid = ({ onProduct, title, keyword, sort }) => {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
-            {items.map(p => <ProductCard key={p.id} product={p} onProduct={onProduct} />)}
+            {displayItems.map(p => <ProductCard key={p.id} product={p} onProduct={onProduct} />)}
 
             {/* 추가 로드 중 — 하단에 스켈레톤 2개 */}
             {loading && <><SkeletonCard /><SkeletonCard /></>}
@@ -781,6 +803,7 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
   const [catLoading, setCatLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const isPaused    = useRef(false);
   const bannerTimer = useRef(null);
   const touchStartX = useRef(null);
@@ -812,7 +835,12 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
   const handleSearch = () => {
     const q = searchQuery.trim();
     if (!q) return;
-    onCategory({ id: "search", icon: "🔍", label: `"${q}" 검색결과`, keyword: q, sort: "default" });
+    setActiveSearch(q);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setActiveSearch("");
   };
 
   const copyCode = async (code) => {
@@ -835,10 +863,18 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
           <input
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => { setSearchQuery(e.target.value); if (!e.target.value.trim()) setActiveSearch(""); }}
+            onFocus={e => e.target.select()}
             onKeyDown={e => e.key === "Enter" && handleSearch()}
             placeholder="알리 꿀템 검색"
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-800 placeholder-gray-400 outline-none" />
+            className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-800 placeholder-gray-400 outline-none" />
+          {searchQuery && (
+            <button onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center active:bg-gray-400 transition"
+              style={{fontSize:10, fontWeight:800, color:"#fff", lineHeight:1}}>
+              ✕
+            </button>
+          )}
         </div>
         <button onClick={handleSearch}
           className="px-4 py-3.5 rounded-2xl bg-orange-500 active:bg-orange-600 text-white text-sm font-bold transition flex-shrink-0">
@@ -920,10 +956,29 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
             </div>
           </div>
 
-          {/* ✅ 무한 스크롤 상품 그리드 */}
-          <div id="hot-products-section">
-            <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
-          </div>
+          {/* ✅ 무한 스크롤 상품 그리드 — 검색 시 인라인 교체 */}
+          {activeSearch ? (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-gray-900">🔍 &ldquo;{activeSearch}&rdquo; 검색결과</p>
+                <button onClick={clearSearch}
+                  className="text-xs text-orange-500 font-semibold active:text-orange-600 transition">
+                  초기화
+                </button>
+              </div>
+              <InfiniteProductGrid
+                key={activeSearch}
+                onProduct={onProduct}
+                keyword={activeSearch}
+                sort="default"
+                rankKeyword={activeSearch}
+              />
+            </div>
+          ) : (
+            <div id="hot-products-section">
+              <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
+            </div>
+          )}
           <LegalFooter />
         </>
       ) : (
@@ -3323,7 +3378,12 @@ export default function App() {
     });
   },[]);
 
-  const goTo = useCallback((s)=>{ saveScroll(); window.history.pushState({screen:s},""); setScreen(s); },[saveScroll]);
+  const goTo = useCallback((s)=>{
+    saveScroll();
+    window.history.pushState({screen:s},"");
+    setScreen(s);
+    requestAnimationFrame(()=>{ if(mainRef.current) mainRef.current.scrollTop = 0; });
+  },[saveScroll]);
   const goCategory = useCallback((cat)=>{ setSelCat(cat); goTo("feed"); setActiveNav("home"); },[goTo]);
   const goProduct  = useCallback((p)=>{ setSelProduct(p); goTo("detail"); },[goTo]);
   const goBack     = useCallback(()=>window.history.back(),[]);
