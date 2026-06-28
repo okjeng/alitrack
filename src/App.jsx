@@ -104,14 +104,14 @@ const generateDummyPage = (page) => {
 // 기타 더미 데이터
 // ═══════════════════════════════════════════════════════════════════
 const CATEGORIES = [
-  { id:"domestic",  icon:"🏠", label:"한국배송",  keyword:"fast shipping korea warehouse",  sort:"default"    },
-  { id:"cheap",     icon:"💸", label:"초저가템",  keyword:"cheap under 5 dollar",           sort:"price_asc"  },
-  { id:"popular",   icon:"🏆", label:"인기랭킹",  keyword:"best seller popular trending",    sort:"default"    },
-  { id:"reviewed",  icon:"⭐", label:"리뷰많은",  keyword:"top rated highly reviewed",       sort:"default"    },
-  { id:"limited",   icon:"⚡", label:"한정특가",  keyword:"flash sale limited time deal",    sort:"discount"   },
-  { id:"value",     icon:"💎", label:"실속상품",  keyword:"value quality everyday",          sort:"discount"   },
-  { id:"monthly",   icon:"🗓️", label:"월간옵션", keyword:"new arrival this month",          sort:"default"    },
-  { id:"freeship",  icon:"🚚", label:"무료배송",  keyword:"free shipping worldwide",         sort:"default"    },
+  { id:"domestic",  icon:"🏠", label:"한국배송",  keyword:"shipping",    sort:"default"   },
+  { id:"cheap",     icon:"💸", label:"초저가템",  keyword:"",            sort:"price_asc" },
+  { id:"popular",   icon:"🏆", label:"인기랭킹",  keyword:"",            sort:"default"   },
+  { id:"reviewed",  icon:"⭐", label:"리뷰많은",  keyword:"gadget",      sort:"default"   },
+  { id:"limited",   icon:"⚡", label:"한정특가",  keyword:"sale",        sort:"discount"  },
+  { id:"value",     icon:"💎", label:"실속상품",  keyword:"home",        sort:"discount"  },
+  { id:"monthly",   icon:"🗓️", label:"월간옵션", keyword:"fashion",     sort:"default"   },
+  { id:"freeship",  icon:"🚚", label:"무료배송",  keyword:"outdoor",     sort:"default"   },
 ];
 
 const daysFromNow = (days) => {
@@ -128,11 +128,11 @@ const DISCOUNT_CODES = [
 ];
 
 const PROMO_BANNERS = [
-  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🎊 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"], keyword:"smartwatch earbuds electronics",  sort:"discount"  },
-  { id:"b2", title:"공식 브랜드 위크",     sub:"샤오미·안커·바세우스 특가", badge:"🏷 브랜드위크", bg:"linear-gradient(135deg,#6366F1,#8B5CF6)",  products:["노트북","이어폰","스마트홈"],        keyword:"xiaomi anker laptop earphone",    sort:"default"   },
-  { id:"b3", title:"플래시 딜 3시간",      sub:"오늘만 이 가격!",           badge:"⚡ 긴급",       bg:"linear-gradient(135deg,#0EA5E9,#6366F1)",  products:["케이블","보조배터리","거치대"],      keyword:"phone cable power bank holder",   sort:"discount"  },
-  { id:"b4", title:"무료배송 페스티벌",    sub:"전품목 무료배송 이벤트",    badge:"🚚 무배축제",   bg:"linear-gradient(135deg,#10B981,#0EA5E9)",  products:["생활용품","뷰티","주방"],            keyword:"home kitchen beauty free ship",   sort:"default"   },
-  { id:"b5", title:"5일 특급 배송전",      sub:"5일 내 도착 보장 상품만",   badge:"🚀 5일배송",    bg:"linear-gradient(135deg,#F59E0B,#EF4444)",  products:["전자제품","패션","홈데코"],          keyword:"fast delivery electronics fashion", sort:"default" },
+  { id:"b1", title:"2026 알리 메가 세일",  sub:"선착순 최대 50% 특가",     badge:"🎊 메가세일",   bg:"linear-gradient(135deg,#FF5A1F,#f7462a)",  products:["갤럭시 버즈","스마트워치","충전기"], keyword:"electronics",  sort:"discount"  },
+  { id:"b2", title:"공식 브랜드 위크",     sub:"샤오미·안커·바세우스 특가", badge:"🏷 브랜드위크", bg:"linear-gradient(135deg,#6366F1,#8B5CF6)",  products:["노트북","이어폰","스마트홈"],        keyword:"gadget",       sort:"default"   },
+  { id:"b3", title:"플래시 딜 3시간",      sub:"오늘만 이 가격!",           badge:"⚡ 긴급",       bg:"linear-gradient(135deg,#0EA5E9,#6366F1)",  products:["케이블","보조배터리","거치대"],      keyword:"sale",         sort:"discount"  },
+  { id:"b4", title:"무료배송 페스티벌",    sub:"전품목 무료배송 이벤트",    badge:"🚚 무배축제",   bg:"linear-gradient(135deg,#10B981,#0EA5E9)",  products:["생활용품","뷰티","주방"],            keyword:"beauty",       sort:"default"   },
+  { id:"b5", title:"5일 특급 배송전",      sub:"5일 내 도착 보장 상품만",   badge:"🚀 5일배송",    bg:"linear-gradient(135deg,#F59E0B,#EF4444)",  products:["전자제품","패션","홈데코"],          keyword:"fashion",      sort:"default"   },
 ];
 
 // ═══════════════════════════════════════════════════════════════════
