@@ -175,14 +175,18 @@ const savePriceHistory = (product) => {
       image: product.image || "",
       price: product.price || 0,
       orig: product.orig || product.price || 0,
+      affiliate_url: product.affiliate_url || "",
       timestamp: Date.now(),
     });
     localStorage.setItem("alitrack_price_history", JSON.stringify(hist.slice(0, 50)));
   } catch {}
 };
 
-const buildAffiliateUrl = (productId) =>
-  `https://www.aliexpress.com/item/${productId}.html`;
+const ALI_TRACKING_ID = "alitrack_kr";
+// promotion_link이 있으면 그대로, 없으면 tracking_id 파라미터 포함 URL 사용
+const buildAffiliateUrl = (productId, promotionLink) =>
+  promotionLink ||
+  `https://www.aliexpress.com/item/${productId}.html?aff_fcid=${ALI_TRACKING_ID}&aff_platform=portals-tool&sk=${ALI_TRACKING_ID}&aff_trace_key=${ALI_TRACKING_ID}`;
 
 const copyToClipboard = async (text) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -1330,8 +1334,7 @@ const SellerCompareCard = ({ product }) => {
           {displayList.map((s, i) => {
             const isCheaper = s.price < product.price;
             const diff      = product.price - s.price;
-            // TODO: API 연동 시 buildAffiliateUrl(s.id) 로 교체
-            const url       = `https://www.aliexpress.com/item/${s.id}.html`;
+            const url       = buildAffiliateUrl(s.id, s.affiliate_url);
             return (
               <a key={s.id} href={url} target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-3 bg-white rounded-2xl px-3 py-2.5 active:opacity-75 transition">
@@ -1386,14 +1389,9 @@ const COUPANG_PARTNER_ID = "AF4860198";
 
 const buildCoupangUrl = (keyword) => {
   const encoded = encodeURIComponent(keyword);
-  // 쿠팡 파트너스 트래킹 URL 구조
-  // 실제 파트너 ID 입력 시 수수료 자동 추적됨
-  if (COUPANG_PARTNER_ID === "YOUR_PARTNER_ID") {
-    // 파트너 ID 미설정 시 일반 검색 링크
-    return `https://www.coupang.com/np/search?q=${encoded}`;
-  }
-  // 파트너 ID 설정 시 트래킹 링크
-  return `https://www.coupang.com/np/search?q=${encoded}&sourceType=affiliate&affiliateCode=${COUPANG_PARTNER_ID}`;
+  // 쿠팡 파트너스 공식 트래킹 파라미터
+  // affiliateCode=AF{숫자} + sourceType=affiliate + subId(선택)
+  return `https://www.coupang.com/np/search?q=${encoded}&affiliateCode=${COUPANG_PARTNER_ID}&sourceType=affiliate&subId=alitrack`;
 };
 
 const CoupangCompareCard = ({ productName, currentPrice }) => {
@@ -1452,9 +1450,7 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
 
         {/* 제휴 고지 */}
         <p className="text-[10px] text-gray-400 text-center mt-2">
-          {COUPANG_PARTNER_ID !== "YOUR_PARTNER_ID"
-            ? "이 링크를 통한 구매 시 쿠팡 파트너스 수수료가 발생할 수 있습니다"
-            : "쿠팡 파트너스 연동 후 수수료 추적이 활성화됩니다"}
+          이 링크를 통한 구매 시 쿠팡 파트너스 수수료가 발생할 수 있습니다
         </p>
       </div>
     </div>
@@ -1480,7 +1476,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
   const hist         = useMemo(() => generateHistory(product.price, seed), [product.price, seed]);
   const minP         = useMemo(() => Math.min(...hist.map(d => d.price)), [hist]);
   const maxP         = useMemo(() => Math.max(...hist.map(d => d.price)), [hist]);
-  const affiliateUrl = useMemo(() => buildAffiliateUrl(product.id), [product.id]);
+  const affiliateUrl = useMemo(() => buildAffiliateUrl(product.id, product.affiliate_url), [product.id, product.affiliate_url]);
 
   const handleWish = () => {
     const nowWished = toggleLocalWish(product);
@@ -1602,7 +1598,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
              background:"linear-gradient(to top,white 65%,transparent)",
              paddingBottom:12,
            }}>
-        <a href={affiliateUrl} target="_blank" rel="noopener noreferrer"
+        <a href={affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
            className="w-full max-w-[568px] block text-center text-white font-extrabold py-4 rounded-2xl text-sm shadow-xl active:opacity-90 transition"
            style={{background:"linear-gradient(90deg,#FF5A1F,#f7462a)"}}>
           알리익스프레스에서 최저가로 구매하기 →
@@ -1930,7 +1926,7 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
   const sparkPrices = useMemo(() => history.slice(-20).map(d => d.price), [history]);
   const vsAllLow  = item.price - allLow;
   const isAtLow   = vsAllLow <= 0;
-  const affiliate = `https://www.aliexpress.com/item/${item.productId}.html`;
+  const affiliate = buildAffiliateUrl(item.productId, item.affiliate_url);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-50/80">
@@ -1974,7 +1970,7 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
             className="text-[11px] font-semibold text-gray-400 active:text-gray-600 transition px-1">
             상세 분석 →
           </button>
-          <a href={affiliate} target="_blank" rel="noopener noreferrer"
+          <a href={affiliate} target="_blank" rel="noopener noreferrer sponsored"
             className="bg-orange-500 active:bg-orange-600 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition"
             onClick={e => e.stopPropagation()}>
             지금 구매 →
