@@ -162,6 +162,25 @@ const toggleLocalWish = (product) => {
   } catch { return false; }
 };
 
+const getPriceHistory = () => {
+  try { return JSON.parse(localStorage.getItem("alitrack_price_history") || "[]"); } catch { return []; }
+};
+const savePriceHistory = (product) => {
+  try {
+    let hist = getPriceHistory().filter(h => h.productId !== String(product.id));
+    hist.unshift({
+      productId: String(product.id),
+      id: product.id,
+      name: product.name || product.title || "",
+      image: product.image || "",
+      price: product.price || 0,
+      orig: product.orig || product.price || 0,
+      timestamp: Date.now(),
+    });
+    localStorage.setItem("alitrack_price_history", JSON.stringify(hist.slice(0, 50)));
+  } catch {}
+};
+
 const buildAffiliateUrl = (productId) =>
   `https://www.aliexpress.com/item/${productId}.html`;
 
@@ -770,7 +789,9 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast }) => {
           </div>
 
           {/* ✅ 무한 스크롤 상품 그리드 */}
-          <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
+          <div id="hot-products-section">
+            <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
+          </div>
           <LegalFooter />
         </>
       ) : (
@@ -1400,6 +1421,8 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
     try { return getLocalAlerts().some(a => a.product_id === product.id); } catch { return false; }
   });
 
+  useEffect(() => { savePriceHistory(product); }, [product.id]);
+
   const seed         = useMemo(() => idToSeed(product.id), [product.id]);
   const hist         = useMemo(() => generateHistory(product.price, seed), [product.price, seed]);
   const minP         = useMemo(() => Math.min(...hist.map(d => d.price)), [hist]);
@@ -1815,9 +1838,65 @@ const PwaInstallBanner = ({ onInstall, onDismiss }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// ⑦ 빈 화면 Empty State (찜·가격기록·나의기록)
+// ⑦ 가격기록 화면 (최근 방문 상품)
 // ═══════════════════════════════════════════════════════════════════
-// ─── 가격기록 = 로컬 알림 신청 목록 ─────────────────────────────────
+const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct }) => {
+  const [hist, setHist] = useState(getPriceHistory);
+
+  const remove = (productId) => {
+    const updated = hist.filter(h => h.productId !== productId);
+    try { localStorage.setItem("alitrack_price_history", JSON.stringify(updated)); } catch {}
+    setHist(updated);
+  };
+
+  const timeLabel = (ts) => {
+    const diff = Date.now() - ts;
+    if (diff < 60000) return "방금 전";
+    if (diff < 3600000) return `${Math.floor(diff/60000)}분 전`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}시간 전`;
+    return new Date(ts).toLocaleDateString("ko-KR", { month:"short", day:"numeric" });
+  };
+
+  return (
+    <div>
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <p className="text-base font-bold text-gray-900">가격기록</p>
+        {hist.length > 0 && <span className="ml-auto text-xs text-gray-400 font-medium">{hist.length}개 상품</span>}
+      </div>
+
+      {hist.length === 0 ? (
+        <EmptyPriceHistory onScrollToProducts={onScrollToProducts}/>
+      ) : (
+        <div className="px-4 py-4 space-y-2">
+          {hist.map(item => (
+            <div key={item.productId} className="bg-white border border-gray-100 rounded-2xl flex items-center gap-3 shadow-sm overflow-hidden">
+              <button className="flex items-center gap-3 flex-1 min-w-0 px-4 py-3" onClick={()=>onProduct(item)}>
+                {item.image ? (
+                  <img src={item.image} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-gray-100"/>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-xl flex-shrink-0">🛒</div>
+                )}
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{item.name || "상품명 없음"}</p>
+                  <p className="text-xs font-extrabold text-orange-500 mt-0.5">{fmt(item.price)}</p>
+                  <p className="text-[10px] text-gray-300 mt-0.5">{timeLabel(item.timestamp)}</p>
+                </div>
+              </button>
+              <button onClick={()=>remove(item.productId)}
+                className="pr-4 text-gray-300 hover:text-red-400 transition text-lg flex-shrink-0">✕</button>
+            </div>
+          ))}
+          <p className="text-[11px] text-gray-400 text-center pt-2">최근 방문한 상품 최대 50개 저장</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── 알림 신청 목록 (내부 용도) ─────────────────────────────────────
 const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
   const [alerts, setAlerts] = useState(getLocalAlerts);
 
@@ -1838,7 +1917,7 @@ const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <EmptyPriceHistory onGoHome={onGoHome}/>
+        <EmptyPriceHistory onScrollToProducts={onGoHome}/>
       ) : (
         <div className="px-4 py-4 space-y-3">
           {alerts.map(a => (
@@ -1931,14 +2010,14 @@ const EmptyWishlist = ({ onGoHome }) => (
   </div>
 );
 
-const EmptyPriceHistory = ({ onGoHome }) => (
+const EmptyPriceHistory = ({ onScrollToProducts }) => (
   <div className="flex flex-col items-center justify-center py-24 px-8 text-center gap-4">
     <div className="w-24 h-24 rounded-3xl bg-[#F7F7F8] flex items-center justify-center text-4xl">📈</div>
     <div>
       <p className="text-base font-extrabold text-gray-900 mb-1">가격 기록이 없어요</p>
       <p className="text-xs text-gray-400 leading-relaxed">상품 상세 페이지를 방문하면<br/>자동으로 가격 기록이 쌓여요</p>
     </div>
-    <button onClick={onGoHome}
+    <button onClick={onScrollToProducts}
       className="mt-2 px-6 py-3 rounded-2xl bg-orange-500 text-white text-sm font-bold active:bg-orange-600 transition">
       상품 둘러보기
     </button>
@@ -2123,7 +2202,7 @@ const NotificationSettingsSheet = ({ onClose }) => {
 };
 
 // ─── 더보기 화면 ─────────────────────────────────────────────────────
-const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, showToast }) => {
+const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, showToast, onInstall }) => {
   const [showNotif, setShowNotif] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
@@ -2179,6 +2258,17 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, s
               <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
               <span className="text-gray-400 text-xs">›</span>
             </button>
+            {onInstall && (
+              <button onClick={onInstall}
+                className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+                <span className="text-lg">📲</span>
+                <div className="flex-1 text-left">
+                  <span className="block text-sm font-semibold text-gray-800">앱 설치하고 더 빠르게 사용하기</span>
+                  <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 실행</span>
+                </div>
+                <span className="text-gray-400 text-xs">›</span>
+              </button>
+            )}
             <button onClick={clearCache}
               className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition">
               <span className="text-lg">🗑️</span>
@@ -2228,6 +2318,9 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, user, onLogin, onLogout, s
                 <span className="text-gray-400 text-xs">›</span>
               </button>
             ))}
+            <p className="px-4 py-3 text-[10px] text-gray-400 leading-relaxed border-t border-gray-100">
+              본 서비스는 더 나은 기능을 위해 익명화된 분석 데이터를 사용합니다. 개인을 식별하는 정보는 수집하지 않습니다.
+            </p>
           </div>
         </div>
 
@@ -2366,6 +2459,14 @@ export default function App() {
   const goBack     = useCallback(()=>window.history.back(),[]);
   const goHome     = useCallback(()=>{ goTo("home"); setActiveNav("home"); },[goTo]);
 
+  const scrollToProducts = useCallback(()=>{
+    goHome();
+    setTimeout(()=>{
+      const el = document.getElementById("hot-products-section");
+      if(el && mainRef.current) mainRef.current.scrollTo({ top: el.offsetTop - 80, behavior: "smooth" });
+    }, 350);
+  },[goHome]);
+
   const handleNav = useCallback((id)=>{
     setActiveNav(id);
     // 모든 탭 미회원도 접근 가능 (localStorage 기반으로 동작)
@@ -2414,8 +2515,7 @@ export default function App() {
       case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
       case "feed":     return selCat?<CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/>:null;
       case "detail":   return selProduct?<DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/>:null;
-      // ⑦ Empty State 적용
-      case "history":  return <LocalAlertsScreen onBack={goBack} onGoHome={goHome} showToast={showToast}/>;
+      case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct}/>;
       case "wishlist": return <LocalWishlistScreen onBack={goBack} onGoHome={goHome} onProduct={goProduct} showToast={showToast}/>;
       case "mypage":   return (
         <div>
@@ -2428,7 +2528,7 @@ export default function App() {
           {user ? <LoggedInMypage user={user} onLogout={handleLogout}/> : <EmptyMypage onLogin={showLogin}/>}
         </div>
       );
-      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast}/>;
+      case "more":     return <MoreScreen onFeedback={()=>setShowFeedback(true)} onPrivacy={()=>goTo("privacy")} onTerms={()=>goTo("terms")} user={user} onLogin={showLogin} onLogout={handleLogout} showToast={showToast} onInstall={showPwaBanner ? handlePwaInstall : null}/>;
       // 법적 페이지
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
@@ -2470,11 +2570,6 @@ export default function App() {
            style={{fontFamily:"'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif"}}>
         <div className="w-full max-w-[600px] min-h-screen bg-white flex flex-col">
 
-          {/* ⑥ PWA 설치 배너 — 헤더 바로 아래 */}
-          {showPwaBanner && !showOnboarding && (
-            <PwaInstallBanner onInstall={handlePwaInstall} onDismiss={()=>setShowPwaBanner(false)}/>
-          )}
-
           {/* 헤더 */}
           <header className="sticky top-0 z-20 bg-white/96 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
             <button onClick={()=>{goTo("home");setActiveNav("home");}} className="flex items-center gap-2">
@@ -2511,11 +2606,6 @@ export default function App() {
           </nav>
         </div>
       </div>
-
-      {/* ③ 쿠키 배너 */}
-      {showCookie && !showOnboarding && (
-        <CookieBanner onAccept={handleCookieAccept} onDecline={handleCookieDecline}/>
-      )}
 
       {/* ④ 피드백 시트 */}
       {showFeedback && <FeedbackSheet onClose={()=>setShowFeedback(false)} showToast={showToast}/>}
