@@ -117,8 +117,8 @@ async def get_products(
     # 에러 응답 — Access Token 승인 대기 중일 때는 빈 결과로 정상 응답
     if "error_response" in data:
         err = data["error_response"]
-        logger.warning(f"AliExpress API 오류 (빈 결과 반환): {err.get('code')} - {err.get('msg')}")
-        return {"products": [], "page": page, "size": size, "api_pending": True}
+        logger.error(f"AliExpress API 오류: code={err.get('code')} sub_code={err.get('sub_code')} msg={err.get('msg')} sub_msg={err.get('sub_msg')}")
+        return {"products": [], "page": page, "size": size, "api_pending": True, "_dbg": err}
 
     # 정상 응답 파싱
     root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
