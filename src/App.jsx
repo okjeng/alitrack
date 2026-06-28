@@ -138,6 +138,13 @@ const PROMO_BANNERS = [
 // ═══════════════════════════════════════════════════════════════════
 // 유틸
 // ═══════════════════════════════════════════════════════════════════
+// GA4 이벤트 헬퍼 — window.gtag 없으면 무시
+// ═══════════════════════════════════════════════════════════════════
+const trackEvent = (name, params = {}) => {
+  try { if (typeof window.gtag === "function") window.gtag("event", name, params); } catch {}
+};
+
+// ═══════════════════════════════════════════════════════════════════
 const fmt       = (n) => n.toLocaleString("ko-KR") + "원";
 const avg60     = (h) => Math.round(h.reduce((s,d) => s+d.price, 0) / h.length / 100) * 100;
 const idToSeed  = (id) => id.split("").reduce((a,c) => a + c.charCodeAt(0), 0) * 9301;
@@ -455,6 +462,12 @@ const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }) =
         <div className="grid grid-cols-2 gap-3">
           {Array(8).fill(0).map((_,i) => <SkeletonCard key={i} />)}
         </div>
+      ) : displayItems.length === 0 && !loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <span className="text-4xl">🔍</span>
+          <p className="text-sm font-bold text-gray-700">검색 결과가 없어요</p>
+          <p className="text-xs text-gray-400 text-center">다른 검색어를 입력하거나<br/>맞춤법을 확인해 주세요</p>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
@@ -672,6 +685,7 @@ const AlertModal = ({ product, user, onClose, showToast }) => {
     // 항상 로컬 저장 (웹 푸시 백업)
     saveLocalAlert({ product_id: product.id, product_name: product.name, image: product.image,
                      target_price: price, current_price: curPrice, saved_at: new Date().toISOString() });
+    trackEvent("alert_set", { product_id: product.id, product_name: product.name, target_price: price, current_price: curPrice });
     setStep("push");
   };
 
@@ -836,6 +850,7 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
     const q = searchQuery.trim();
     if (!q) return;
     setActiveSearch(q);
+    trackEvent("search", { search_term: q });
   };
 
   const clearSearch = () => {
@@ -1539,10 +1554,7 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
   const [copied, setCopied] = useState(false);
 
   // 쿠팡 링크 클릭 시 로그 (API 연동 후 클릭 추적으로 활용)
-  const handleClick = () => {
-    // TODO: POST /api/track/coupang-click { productName, keyword }
-    console.log("[쿠팡 클릭]", keyword);
-  };
+  const handleClick = () => {};
 
   return (
     <div className="rounded-3xl overflow-hidden border border-gray-100">
@@ -1587,10 +1599,6 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
           쿠팡에서 "{keyword}" 검색하기 →
         </a>
 
-        {/* 제휴 고지 */}
-        <p className="text-[10px] text-gray-400 text-center mt-2">
-          이 링크를 통한 구매 시 쿠팡 파트너스 수수료가 발생할 수 있습니다
-        </p>
       </div>
     </div>
   );
@@ -1735,6 +1743,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
              paddingBottom:12,
            }}>
         <a href={affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
+           onClick={() => trackEvent("purchase_click", { product_id: product.id, product_name: product.name, price: product.price })}
            className="w-full max-w-[568px] block text-center text-white font-extrabold py-4 rounded-2xl text-sm shadow-xl active:opacity-90 transition"
            style={{background:"linear-gradient(90deg,#FF5A1F,#f7462a)"}}>
           알리익스프레스에서 최저가로 구매하기 →
@@ -3385,7 +3394,7 @@ export default function App() {
     requestAnimationFrame(()=>{ if(mainRef.current) mainRef.current.scrollTop = 0; });
   },[saveScroll]);
   const goCategory = useCallback((cat)=>{ setSelCat(cat); goTo("feed"); setActiveNav("home"); },[goTo]);
-  const goProduct  = useCallback((p)=>{ setSelProduct(p); goTo("detail"); },[goTo]);
+  const goProduct  = useCallback((p)=>{ setSelProduct(p); goTo("detail"); trackEvent("product_view", { product_id: p.id, product_name: p.name, price: p.price }); },[goTo]);
   const goBack     = useCallback(()=>window.history.back(),[]);
   const goHome     = useCallback(()=>{ goTo("home"); setActiveNav("home"); },[goTo]);
 
