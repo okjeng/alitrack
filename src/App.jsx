@@ -2633,60 +2633,70 @@ const NotificationSettingsSheet = ({ onClose }) => {
 };
 
 // ─── Android / 공통 PWA 설치 안내 모달 ──────────────────────────────────
-const AndroidInstallGuide = ({ onClose, isSamsung }) => (
-  <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={onClose}>
-    <div className="absolute inset-0 bg-black/50" />
-    <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
-         style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 28px)" }}
-         onClick={e => e.stopPropagation()}>
-      <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-      <div className="text-center mb-5">
-        <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3 text-3xl">📲</div>
-        <p className="text-lg font-extrabold text-gray-900">AliTrack 홈 화면에 추가</p>
-        <p className="text-xs text-gray-400 mt-1">앱처럼 빠르게 실행할 수 있어요</p>
+const AndroidInstallGuide = ({ onClose, isSamsung }) => {
+  const [tab, setTab] = useState(isSamsung ? "samsung" : "chrome");
+
+  const CHROME_STEPS = [
+    { n:1, icon:"⋮",  text:"주소창 오른쪽 끝 ⋮ 메뉴를 탭해요" },
+    { n:2, icon:"＋", text:"'홈 화면에 추가' 또는 '앱 설치'를 탭해요" },
+    { n:3, icon:"✓",  text:"'설치' 또는 '추가'를 눌러 완료해요" },
+  ];
+  const SAMSUNG_STEPS = [
+    { n:1, icon:"≡",  text:"화면 하단 메뉴(≡)를 탭해요" },
+    { n:2, icon:"＋", text:"'페이지 추가' → '홈 화면'을 탭해요" },
+    { n:3, icon:"✓",  text:"오른쪽 상단 '추가'를 탭하면 완료!" },
+  ];
+  const steps = tab === "samsung" ? SAMSUNG_STEPS : CHROME_STEPS;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
+           style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 28px)" }}
+           onClick={e => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+        <div className="text-center mb-5">
+          <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3 text-3xl">📲</div>
+          <p className="text-lg font-extrabold text-gray-900">AliTrack 홈 화면에 추가</p>
+          <p className="text-xs text-gray-400 mt-1">앱처럼 빠르게 실행할 수 있어요</p>
+        </div>
+
+        {/* 브라우저 탭 선택 */}
+        <div className="flex gap-2 mb-4 bg-[#F7F7F8] p-1 rounded-2xl">
+          {[{id:"chrome",label:"Chrome"},{id:"samsung",label:"삼성 인터넷"}].map(b=>(
+            <button key={b.id} onClick={()=>setTab(b.id)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
+                tab===b.id ? "bg-white text-orange-500 shadow-sm" : "text-gray-400"
+              }`}>{b.label}</button>
+          ))}
+        </div>
+
+        <div className="space-y-3 mb-5">
+          {steps.map(({n,icon,text}) => (
+            <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3.5">
+              <div className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-base font-extrabold flex-shrink-0">{n}</div>
+              <div>
+                <p className="text-sm font-bold text-orange-500 mb-0.5">{icon}</p>
+                <p className="text-sm font-semibold text-gray-800">{text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className={`rounded-2xl px-4 py-3 mb-5 ${tab==="samsung" ? "bg-blue-50" : "bg-orange-50"}`}>
+          <p className={`text-xs text-center ${tab==="samsung" ? "text-blue-700" : "text-orange-700"}`}>
+            💡 {tab==="samsung" ? "삼성 인터넷 브라우저 기준이에요" : "Chrome 브라우저 기준이에요"}
+          </p>
+        </div>
+
+        <button onClick={onClose}
+          className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
+          확인
+        </button>
       </div>
-
-      {isSamsung ? (
-        <div className="space-y-3 mb-5">
-          {[
-            { n:1, text:"화면 하단 메뉴 바(≡)를 탭해요" },
-            { n:2, text:"'페이지 추가'를 선택해요" },
-            { n:3, text:"'홈 화면'을 선택하고 '추가'를 탭해요" },
-          ].map(({n,text}) => (
-            <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">{n}</div>
-              <p className="text-sm font-semibold text-gray-800">{text}</p>
-            </div>
-          ))}
-          <div className="bg-blue-50 rounded-2xl px-4 py-3">
-            <p className="text-xs text-blue-700 text-center">💡 삼성 인터넷 브라우저 기준 안내예요</p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3 mb-5">
-          {[
-            { n:1, text:"주소창 오른쪽 끝 ⋮ 메뉴를 탭해요" },
-            { n:2, text:"'홈 화면에 추가' 또는 '앱 설치'를 탭해요" },
-            { n:3, text:"'설치' 또는 '추가'를 눌러 완료해요" },
-          ].map(({n,text}) => (
-            <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">{n}</div>
-              <p className="text-sm font-semibold text-gray-800">{text}</p>
-            </div>
-          ))}
-          <div className="bg-orange-50 rounded-2xl px-4 py-3">
-            <p className="text-xs text-orange-700 text-center">💡 Chrome 브라우저 기준 · 브라우저마다 메뉴 위치가 다를 수 있어요</p>
-          </div>
-        </div>
-      )}
-
-      <button onClick={onClose}
-        className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
-        확인
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── iOS PWA 설치 안내 모달 ───────────────────────────────────────────
 const IosInstallGuide = ({ onClose }) => (
@@ -3218,14 +3228,16 @@ export default function App() {
   const [pwaInstallable, setPwaInstallable] = useState(() => !!window.__pwa);
   const [showIosGuide, setShowIosGuide]         = useState(false);
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
-  const isSamsung = /SamsungBrowser/i.test(navigator.userAgent);
+  const isSamsung    = /SamsungBrowser/i.test(navigator.userAgent);
+  const isAndroid    = /Android/i.test(navigator.userAgent);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(
     () => localStorage.getItem("alitrack_install_dismissed") === "1"
   );
   const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches
                     || !!window.navigator.standalone;
-  const showInstallMenu   = !isStandalone && (pwaInstallable || isIOS);
+  // Android 전체 + iOS + Chrome이 프롬프트 띄울 때 표시
+  const showInstallMenu   = !isStandalone && (pwaInstallable || isIOS || isAndroid);
   const showInstallBanner = showInstallMenu && !installBannerDismissed;
 
   const dismissInstallBanner = () => {
@@ -3369,14 +3381,16 @@ export default function App() {
       setShowIosGuide(true);
       return;
     }
+    // Chrome이 자동 프롬프트를 쏜 경우 → 네이티브 설치 다이얼로그
     if (window.__pwa?.install) {
       const accepted = await window.__pwa.install();
       setPwaInstallable(false);
       if (accepted) showToast("앱 설치가 시작되었습니다 🎉");
       else showToast("설치가 취소되었습니다");
-    } else {
-      setShowAndroidGuide(true);
+      return;
     }
+    // 그 외 Android (삼성 인터넷, Chrome 프롬프트 없음 등) → 수동 안내
+    setShowAndroidGuide(true);
   };
 
   const renderScreen = () => {
