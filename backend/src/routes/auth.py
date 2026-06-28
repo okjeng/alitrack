@@ -11,6 +11,8 @@ src/routes/auth.py — 이메일 회원가입 / 로그인
 import secrets
 import logging
 import re
+import hashlib
+import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Response, Request, Cookie
 from pydantic import BaseModel
@@ -90,14 +92,17 @@ def _validate_email(email: str) -> bool:
 
 
 def _hash_pw(password: str) -> str:
-    from passlib.hash import bcrypt
-    return bcrypt.hash(password)
+    salt = os.urandom(32)
+    key  = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 260000)
+    return salt.hex() + ":" + key.hex()
 
 
 def _verify_pw(plain: str, hashed: str) -> bool:
-    from passlib.hash import bcrypt
     try:
-        return bcrypt.verify(plain, hashed)
+        salt_hex, key_hex = hashed.split(":")
+        salt = bytes.fromhex(salt_hex)
+        key  = hashlib.pbkdf2_hmac("sha256", plain.encode(), salt, 260000)
+        return key.hex() == key_hex
     except Exception:
         return False
 
