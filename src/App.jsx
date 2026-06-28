@@ -968,22 +968,34 @@ const calcWeeklyPattern = (basePrice, seed) => {
   }).map((d, _, arr) => ({ ...d, isMin: d.price === Math.min(...arr.map(x => x.price)) }));
 };
 
-// 다음 대형 세일 계산
+// 블랙프라이데이: 11월 넷째 목요일 다음 날 (금요일)
+const getBlackFriday = (year) => {
+  const nov1 = new Date(year, 10, 1);
+  const firstThursday = ((4 - nov1.getDay() + 7) % 7) + 1;
+  return new Date(year, 10, firstThursday + 21 + 1); // 넷째 목 + 1일
+};
+
+// 4대 확정 세일 날짜
 const calcNextSale = () => {
   const today = new Date();
-  const year  = today.getFullYear();
-  const sales = [
-    { name:"솔로데이",   emoji:"🛍",  date: new Date(year, 10, 11) }, // 11/11
-    { name:"블랙프라이데이", emoji:"🖤", date: new Date(year, 10, 29) }, // 11/29
-    { name:"크리스마스 세일", emoji:"🎄", date: new Date(year, 11, 20) }, // 12/20
-    { name:"신년 세일",  emoji:"🎆",  date: new Date(year+1, 0, 1)  }, // 1/1
-    { name:"발렌타인",   emoji:"💝",  date: new Date(year+1, 1, 14) }, // 2/14
+  today.setHours(0, 0, 0, 0);
+  const y = today.getFullYear();
+  const candidates = [
+    { name:"6.18 알리 미드이어 세일", emoji:"☀️", maxDisc:60, date: new Date(y,   5, 18) },
+    { name:"11.11 솔로데이",          emoji:"🛍", maxDisc:80, date: new Date(y,  10, 11) },
+    { name:"블랙프라이데이",           emoji:"🖤", maxDisc:70, date: getBlackFriday(y)    },
+    { name:"12.12 더블트웰브",         emoji:"🎁", maxDisc:60, date: new Date(y,  11, 12) },
+    // 내년 순환
+    { name:"6.18 알리 미드이어 세일", emoji:"☀️", maxDisc:60, date: new Date(y+1, 5, 18) },
+    { name:"11.11 솔로데이",          emoji:"🛍", maxDisc:80, date: new Date(y+1,10, 11) },
+    { name:"블랙프라이데이",           emoji:"🖤", maxDisc:70, date: getBlackFriday(y+1)  },
+    { name:"12.12 더블트웰브",         emoji:"🎁", maxDisc:60, date: new Date(y+1,11, 12) },
   ];
-  const upcoming = sales
+  const upcoming = candidates
     .map(s => ({ ...s, dday: Math.ceil((s.date - today) / 86400000) }))
-    .filter(s => s.dday > 0)
+    .filter(s => s.dday >= 0)
     .sort((a, b) => a.dday - b.dday);
-  return upcoming[0] || { name:"솔로데이", emoji:"🛍", dday:365 };
+  return upcoming[0];
 };
 
 // 가격 이벤트 타임라인 생성 (더미)
@@ -1147,14 +1159,15 @@ const NextSaleCountdown = ({ currentPrice }) => {
   const expectedDisc = 25; // 평균 추가 할인율 (더미, API 연동 시 실제값 사용)
   const expectedPrice= Math.round(currentPrice * (1 - expectedDisc / 100) / 100) * 100;
 
+  if (!sale) return null;
   return (
     <div className="rounded-3xl overflow-hidden"
          style={{background:"linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%)"}}>
       <div className="p-4 text-white">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold">🗓 다음 대형 세일 예측</p>
+          <p className="text-sm font-bold">🗓 다음 대형 세일</p>
           <span className="text-xs font-extrabold bg-orange-500 px-2.5 py-1 rounded-full">
-            D-{sale.dday}
+            {sale.dday === 0 ? "오늘!" : `D-${sale.dday}`}
           </span>
         </div>
 
@@ -1163,29 +1176,21 @@ const NextSaleCountdown = ({ currentPrice }) => {
           <div>
             <p className="text-base font-extrabold">{sale.name}</p>
             <p className="text-xs text-blue-200 mt-0.5">
-              약 {sale.dday}일 후 · 역대 최대 {expectedDisc}% 추가 할인 예상
+              {sale.dday === 0 ? "오늘 시작!" : `${sale.dday}일 후`} · 역대 최대 {sale.maxDisc}% 할인 행사
             </p>
           </div>
         </div>
 
-        <div className="mt-4 p-3 bg-white/10 rounded-2xl flex items-center justify-between">
-          <div>
-            <p className="text-[10px] text-blue-200">현재가</p>
-            <p className="text-sm font-extrabold">{fmt(currentPrice)}</p>
-          </div>
-          <div className="text-blue-200 text-lg">→</div>
-          <div className="text-right">
-            <p className="text-[10px] text-blue-200">세일 예상가</p>
-            <p className="text-sm font-extrabold text-orange-400">{fmt(expectedPrice)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-blue-200">예상 절감액</p>
-            <p className="text-sm font-extrabold text-green-400">-{fmt(currentPrice - expectedPrice)}</p>
-          </div>
+        <div className="mt-3 p-3 bg-white/10 rounded-2xl">
+          <p className="text-[11px] text-blue-200 font-semibold mb-1">이 상품 현재가</p>
+          <p className="text-lg font-extrabold">{fmt(currentPrice)}</p>
+          <p className="text-[10px] text-blue-300/70 mt-1">
+            * 세일 시 가격은 알리익스프레스 앱에서 직접 확인하세요
+          </p>
         </div>
 
-        <p className="text-[10px] text-blue-300/60 mt-2 text-center">
-          * 과거 세일 데이터 기반 예측이며 실제와 다를 수 있습니다
+        <p className="text-[10px] text-blue-300/50 mt-2 text-center">
+          6.18 · 11.11 · 블랙프라이데이 · 12.12 공식 확정 일정
         </p>
       </div>
     </div>
