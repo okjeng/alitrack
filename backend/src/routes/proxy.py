@@ -183,6 +183,28 @@ async def get_product_detail(product_id: str):
     return _sanitize_product(raw)
 
 
+@router.get("/debug-raw")
+async def debug_raw_ali(secret: str = Query(...)):
+    """AliExpress 원시 응답 확인용 (CRON_SECRET 필요) — 캐시 없음"""
+    from src.config.settings import settings as _s
+    if secret != _s.CRON_SECRET:
+        raise HTTPException(status_code=403, detail="forbidden")
+    params = _build_common_params(
+        method="aliexpress.affiliate.hotproduct.query",
+        extra={
+            "tracking_id":    settings.ALI_TRACKING_ID,
+            "page_no":        "1",
+            "page_size":      "3",
+            "target_currency":"KRW",
+            "target_language":"ko",
+            "country":        "KR",
+        },
+    )
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(ALI_API_BASE, data=params)
+    return {"status": resp.status_code, "body": resp.json()}
+
+
 @router.get("/affiliate-link/{product_id}")
 async def get_affiliate_link(product_id: str):
     """
