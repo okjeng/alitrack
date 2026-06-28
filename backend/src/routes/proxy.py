@@ -114,19 +114,24 @@ async def get_products(
         logger.error(f"프록시 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
 
-    # 에러 응답 — Access Token 승인 대기 중일 때는 빈 결과로 정상 응답
+    # raw 응답 전체 로그 (디버그용 — 확인 후 제거 예정)
+    logger.error(f"[ALI-RAW] keys={list(data.keys())} raw={str(data)[:500]}")
+
+    # 에러 응답
     if "error_response" in data:
         err = data["error_response"]
-        logger.error(f"AliExpress API 오류: code={err.get('code')} sub_code={err.get('sub_code')} msg={err.get('msg')} sub_msg={err.get('sub_msg')}")
-        return {"products": [], "page": page, "size": size, "api_pending": True, "_dbg": err}
+        logger.error(f"[ALI-ERR] code={err.get('code')} sub={err.get('sub_code')} msg={err.get('msg')}")
+        return {"products": [], "page": page, "size": size, "api_pending": True, "_err": err}
 
     # 정상 응답 파싱
     root = data.get("aliexpress_affiliate_hotproduct_query_response", {})
     resp_result = root.get("resp_result", {})
     resp_code = resp_result.get("resp_code", root.get("resp_code", -1))
 
+    logger.info(f"[ALI-RESP] resp_code={resp_code} keys={list(root.keys())}")
+
     if resp_code not in (0, "0", 200, "200"):
-        logger.warning(f"AliExpress resp_code 오류 (빈 결과 반환): code={resp_code}")
+        logger.error(f"[ALI-RESP] 비정상 코드: resp_code={resp_code} result={str(resp_result)[:200]}")
         return {"products": [], "page": page, "size": size, "api_pending": True}
 
     raw_products = (
