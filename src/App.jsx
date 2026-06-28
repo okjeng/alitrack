@@ -2632,6 +2632,62 @@ const NotificationSettingsSheet = ({ onClose }) => {
   );
 };
 
+// ─── Android / 공통 PWA 설치 안내 모달 ──────────────────────────────────
+const AndroidInstallGuide = ({ onClose, isSamsung }) => (
+  <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={onClose}>
+    <div className="absolute inset-0 bg-black/50" />
+    <div className="relative w-full max-w-[600px] bg-white rounded-t-3xl px-6 pt-6 animate-slideUp"
+         style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 28px)" }}
+         onClick={e => e.stopPropagation()}>
+      <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+      <div className="text-center mb-5">
+        <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3 text-3xl">📲</div>
+        <p className="text-lg font-extrabold text-gray-900">AliTrack 홈 화면에 추가</p>
+        <p className="text-xs text-gray-400 mt-1">앱처럼 빠르게 실행할 수 있어요</p>
+      </div>
+
+      {isSamsung ? (
+        <div className="space-y-3 mb-5">
+          {[
+            { n:1, text:"화면 하단 메뉴 바(≡)를 탭해요" },
+            { n:2, text:"'페이지 추가'를 선택해요" },
+            { n:3, text:"'홈 화면'을 선택하고 '추가'를 탭해요" },
+          ].map(({n,text}) => (
+            <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">{n}</div>
+              <p className="text-sm font-semibold text-gray-800">{text}</p>
+            </div>
+          ))}
+          <div className="bg-blue-50 rounded-2xl px-4 py-3">
+            <p className="text-xs text-blue-700 text-center">💡 삼성 인터넷 브라우저 기준 안내예요</p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3 mb-5">
+          {[
+            { n:1, text:"주소창 오른쪽 끝 ⋮ 메뉴를 탭해요" },
+            { n:2, text:"'홈 화면에 추가' 또는 '앱 설치'를 탭해요" },
+            { n:3, text:"'설치' 또는 '추가'를 눌러 완료해요" },
+          ].map(({n,text}) => (
+            <div key={n} className="flex items-center gap-4 bg-[#F7F7F8] rounded-2xl px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-extrabold flex-shrink-0">{n}</div>
+              <p className="text-sm font-semibold text-gray-800">{text}</p>
+            </div>
+          ))}
+          <div className="bg-orange-50 rounded-2xl px-4 py-3">
+            <p className="text-xs text-orange-700 text-center">💡 Chrome 브라우저 기준 · 브라우저마다 메뉴 위치가 다를 수 있어요</p>
+          </div>
+        </div>
+      )}
+
+      <button onClick={onClose}
+        className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold text-sm active:bg-orange-600 transition">
+        확인
+      </button>
+    </div>
+  </div>
+);
+
 // ─── iOS PWA 설치 안내 모달 ───────────────────────────────────────────
 const IosInstallGuide = ({ onClose }) => (
   <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={onClose}>
@@ -3160,7 +3216,9 @@ export default function App() {
 
   // ⑥ PWA 설치 상태
   const [pwaInstallable, setPwaInstallable] = useState(() => !!window.__pwa);
-  const [showIosGuide, setShowIosGuide]     = useState(false);
+  const [showIosGuide, setShowIosGuide]         = useState(false);
+  const [showAndroidGuide, setShowAndroidGuide] = useState(false);
+  const isSamsung = /SamsungBrowser/i.test(navigator.userAgent);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(
     () => localStorage.getItem("alitrack_install_dismissed") === "1"
   );
@@ -3314,13 +3372,10 @@ export default function App() {
     if (window.__pwa?.install) {
       const accepted = await window.__pwa.install();
       setPwaInstallable(false);
-      if (accepted) {
-        showToast("앱 설치가 시작되었습니다 🎉");
-      } else {
-        showToast("설치가 취소되었습니다");
-      }
+      if (accepted) showToast("앱 설치가 시작되었습니다 🎉");
+      else showToast("설치가 취소되었습니다");
     } else {
-      showToast("이미 설치되어 있거나 현재 환경에서 지원하지 않습니다");
+      setShowAndroidGuide(true);
     }
   };
 
@@ -3430,6 +3485,9 @@ export default function App() {
 
       {/* iOS PWA 설치 안내 */}
       {showIosGuide && <IosInstallGuide onClose={()=>setShowIosGuide(false)}/>}
+
+      {/* Android / 공통 PWA 설치 안내 */}
+      {showAndroidGuide && <AndroidInstallGuide onClose={()=>setShowAndroidGuide(false)} isSamsung={isSamsung}/>}
 
       {/* 이메일 로그인/가입 모달 */}
       {loginModal && <EmailAuthModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
