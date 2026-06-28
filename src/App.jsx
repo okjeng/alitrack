@@ -40,7 +40,7 @@ const PRODUCT_TEMPLATES = [
 
 const PAGE_SIZE = 20;
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://alitrack-production.up.railway.app";
 
 // API 응답 → 프론트 product 객체 변환
 const mapProduct = (p) => {

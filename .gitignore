@@ -5,6 +5,7 @@
 .env
 .env.*
 !.env.example            # 예시 템플릿만 허용
+!.env.production         # 프론트 공개 환경변수 (VITE_ 접두사만 포함, 시크릿 없음)
 backend/.env
 backend/.env.*
 !backend/.env.template   # 예시 템플릿만 허용
