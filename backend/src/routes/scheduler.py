@@ -44,12 +44,12 @@ def _verify_secret(x_cron_secret: str | None) -> None:
 
 # ─── AliExpress 가격 조회 ─────────────────────────────────────────────
 def _ali_signature(params: dict) -> str:
-    sorted_params = sorted((k, v) for k, v in params.items() if k not in {"sign", "sign_method"})
-    msg = "".join(f"{k}{v}" for k, v in sorted_params)
+    keys = sorted(k for k in params if k != "sign")
+    msg = "".join(k + str(params[k]) for k in keys)
     return hmac.new(
         settings.ALI_APP_SECRET.encode(),
         msg.encode(),
-        hashlib.md5,
+        hashlib.sha256,
     ).hexdigest().upper()
 
 
@@ -59,16 +59,15 @@ async def _fetch_product_price(product_id: str) -> int | None:
         return None
     params = {
         "app_key":    settings.ALI_APP_KEY,
-        "method":     "aliexpress.affiliate.productdetail.get",
-        "timestamp":  str(int(time.time())),
-        "sign_method":"hmac",
+        "method":     "aliexpress.affiliate.product.detail.get",
+        "timestamp":  str(int(time.time() * 1000)),
+        "sign_method":"sha256",
         "format":     "json",
         "v":          "2.0",
-        "product_ids":str(product_id),
+        "product_id": str(product_id),
         "tracking_id":settings.ALI_TRACKING_ID,
         "target_currency": "KRW",
         "target_language": "ko",
-        "country":    "KR",
     }
     params["sign"] = _ali_signature(params)
     try:
@@ -77,16 +76,11 @@ async def _fetch_product_price(product_id: str) -> int | None:
             r.raise_for_status()
             data = r.json()
         resp = (data
-                .get("aliexpress_affiliate_productdetail_get_response", {})
+                .get("aliexpress_affiliate_product_detail_get_response", {})
                 .get("resp_result", {}))
-        if resp.get("resp_code") not in (0, "0", 200, "200"):
+        if resp.get("resp_code") not in (200, "200"):
             return None
-        products = (resp.get("result", {})
-                       .get("products", {})
-                       .get("product", []))
-        if not products:
-            return None
-        raw_price = products[0].get("target_sale_price", 0)
+        raw_price = resp.get("result", {}).get("target_sale_price", 0)
         return int(float(raw_price)) if raw_price else None
     except Exception as e:
         logger.warning(f"가격 조회 실패 product={product_id}: {type(e).__name__}")
