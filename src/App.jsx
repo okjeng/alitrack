@@ -2535,7 +2535,6 @@ const MoreScreen = ({ onFeedback, onPrivacy, onTerms, onHowTo, user, onLogin, on
               { icon:"📖", label:"사용법 가이드",      action: onHowTo  },
               { icon:"🔒", label:"개인정보처리방침", action: onPrivacy },
               { icon:"📄", label:"이용약관",         action: onTerms  },
-              { icon:"✉️", label:"이메일 문의",       action:()=>window.open("mailto:help@alitrack.kr") },
             ].map((i,idx,arr)=>(
               <button key={i.label} onClick={i.action}
                 className={`w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition ${idx<arr.length-1?"border-b border-gray-100":""}`}>
