@@ -1406,16 +1406,12 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
   const maxP         = useMemo(() => Math.max(...hist.map(d => d.price)), [hist]);
   const affiliateUrl = useMemo(() => buildAffiliateUrl(product.id), [product.id]);
 
-  const isKakao = user?.provider === "kakao";
-
   const handleWish = () => {
     const nowWished = toggleLocalWish(product);
     setWished(nowWished);
-    if (nowWished) {
-      showToast(isKakao ? "관심상품에 추가했어요 ❤️" : "관심상품에 추가했어요 ❤️  (카카오 가입 시 영구 보관)");
-    } else {
-      showToast("관심상품에서 제거했어요");
-    }
+    showToast(nowWished
+      ? (user ? "관심상품에 추가했어요 ❤️" : "관심상품에 추가했어요 ❤️  (이메일 가입 시 영구 보관)")
+      : "관심상품에서 제거했어요");
   };
 
   const handleAlert = () => setAlertOpen(true);
@@ -1564,12 +1560,12 @@ const PrivacyScreen = ({ onBack }) => (
     <div className="px-5 py-5 space-y-6 text-gray-700">
       <p className="text-xs text-gray-400">시행일: 2026년 1월 1일 · 최종 수정: 2026년 6월 27일</p>
       {[
-        { title:"1. 개인정보 수집 항목 및 목적", body:"AliTrack(이하 \"서비스\")은 아래와 같은 목적으로 최소한의 개인정보를 수집합니다.\n\n• 소셜 로그인(카카오·네이버·구글): 이메일 주소, 닉네임, 프로필 이미지\n• 서비스 이용: 관심 상품 목록, 알림 설정 정보, 서비스 이용 기록\n\n수집 목적: 회원 식별, 최저가 알림 발송, 찜 목록 및 가격 기록 보관, 서비스 품질 개선" },
+        { title:"1. 개인정보 수집 항목 및 목적", body:"AliTrack(이하 \"서비스\")은 아래와 같은 목적으로 최소한의 개인정보를 수집합니다.\n\n• 이메일 회원가입: 이메일 주소, 비밀번호(암호화 저장)\n• 서비스 이용: 관심 상품 목록, 알림 설정 정보, 서비스 이용 기록\n\n수집 목적: 회원 식별, 최저가 알림 발송, 찜 목록 및 가격 기록 보관, 서비스 품질 개선" },
         { title:"2. 개인정보 보유 및 이용 기간", body:"• 회원 탈퇴 시 즉시 파기\n• 전자상거래법: 계약·청약철회 기록 5년, 대금결제 기록 5년\n• 통신비밀보호법: 로그인 기록 3개월" },
         { title:"3. 개인정보 제3자 제공", body:"서비스는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다.\n단, 이용자가 사전에 동의한 경우 또는 법령의 규정에 의한 경우 예외로 합니다.\n\n※ 알리익스프레스 제휴 링크 클릭 시 해당 사이트의 개인정보처리방침이 적용됩니다." },
-        { title:"4. 개인정보 처리 위탁", body:"• Supabase Inc. — 데이터베이스 저장 및 관리\n• Cloudflare Inc. — 웹 서비스 호스팅 (Cloudflare Pages)\n• Railway Corp. — 백엔드 서버 호스팅\n• 카카오(주) / 네이버(주) / Google LLC — 소셜 로그인 인증" },
+        { title:"4. 개인정보 처리 위탁", body:"• Supabase Inc. — 데이터베이스 저장 및 관리\n• Cloudflare Inc. — 웹 서비스 호스팅 (Cloudflare Pages)\n• Railway Corp. — 백엔드 서버 호스팅" },
         { title:"5. 이용자 권리", body:"이용자는 언제든지 개인정보 열람·수정·삭제·처리정지를 요청할 수 있습니다.\n행사 방법: 앱 내 [나의기록 → 계정 설정] 또는 privacy@alitrack.kr 로 요청\n\n• 개인정보분쟁조정위원회: www.kopico.go.kr (1833-6972)\n• 개인정보침해신고센터: privacy.kisa.or.kr (118)" },
-        { title:"6. 쿠키 및 분석 도구", body:"• Google Analytics 4: 서비스 이용 통계 분석(익명 처리)\n• 카카오 픽셀: 마케팅 효과 측정\n브라우저 설정에서 쿠키를 거부할 수 있으나 일부 기능이 제한될 수 있습니다." },
+        { title:"6. 쿠키 및 분석 도구", body:"• Google Analytics 4: 서비스 이용 통계 분석(익명 처리)\n브라우저 설정에서 쿠키를 거부할 수 있으나 일부 기능이 제한될 수 있습니다." },
         { title:"7. 개인정보 보호책임자", body:"이메일: privacy@alitrack.kr\n본 방침은 개인정보보호법, 정보통신망법 등 관련 법령을 준수하여 작성되었습니다." },
       ].map((s,i)=>(
         <div key={i} className="space-y-2">
@@ -1621,7 +1617,7 @@ const CookieBanner = ({ onAccept, onDecline }) => (
     <div className="w-full max-w-[600px] bg-gray-900 mx-3 mb-3 rounded-2xl px-4 py-4 shadow-2xl">
       <p className="text-xs font-bold text-white mb-1">🍪 쿠키 및 분석 도구 사용 동의</p>
       <p className="text-[11px] text-gray-300 leading-relaxed mb-3">
-        서비스 품질 개선을 위해 Google Analytics·카카오 픽셀을 사용합니다.
+        서비스 품질 개선을 위해 Google Analytics를 사용합니다.
         수집된 데이터는 익명 처리되며 제3자에게 판매되지 않습니다.
       </p>
       <div className="flex gap-2">
@@ -2297,29 +2293,8 @@ export default function App() {
     return () => window.removeEventListener("pwa-installable", handler);
   },[]);
 
-  // 소셜 로그인 후 #tok= 해시 처리 + ?login=fail 처리 + 인증 상태 확인
+  // 앱 시작 시 저장된 토큰으로 로그인 상태 복원
   useEffect(() => {
-    // ?login=fail 처리 — OAuth 실패 시 에러 토스트
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("login") === "fail") {
-      const reason = params.get("reason") || "";
-      const msg = reason === "access_denied"
-        ? "로그인을 취소했습니다."
-        : `로그인에 실패했습니다. (${reason || "알 수 없는 오류"})`;
-      showToast(msg);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-
-    // 해시에서 JWT 추출 (#tok=<jwt>)
-    const hash = window.location.hash;
-    if (hash.startsWith("#tok=")) {
-      const token = hash.slice(5);
-      try { sessionStorage.setItem("ali_token", token); } catch {}
-      window.history.replaceState({}, "", window.location.pathname);
-      showToast("로그인 성공! 🎉");
-    }
-
-    // 저장된 토큰으로 로그인 상태 확인
     const stored = (() => { try { return sessionStorage.getItem("ali_token"); } catch { return null; } })();
     if (!stored) return;
     fetch(`${API_BASE}/api/auth/me`, {
@@ -2329,24 +2304,22 @@ export default function App() {
       .then(data => {
         if (!data?.logged_in) return;
         setUser(data);
-        // 카카오 가입 후 게스트 로컬 데이터 → 계정 통합
-        if (data.provider === "kakao") {
-          const localAlerts = getLocalAlerts();
-          if (localAlerts.length > 0 && stored) {
-            fetch(`${API_BASE}/api/alerts/merge-guest`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${stored}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ alerts: localAlerts }),
+        // 이메일 가입 후 게스트 로컬 알림 → 계정 통합
+        const localAlerts = getLocalAlerts();
+        if (localAlerts.length > 0) {
+          fetch(`${API_BASE}/api/alerts/merge-guest`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${stored}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ alerts: localAlerts }),
+          })
+            .then(r => r.json())
+            .then(d => {
+              if (d.merged > 0) {
+                showToast(`알림 ${d.merged}건이 계정에 통합됐어요 🎉`);
+                localStorage.removeItem("alitrack_local_alerts");
+              }
             })
-              .then(r => r.json())
-              .then(d => {
-                if (d.merged > 0) {
-                  showToast(`알림 ${d.merged}건이 계정에 통합됐어요 🎉`);
-                  localStorage.removeItem("alitrack_local_alerts");
-                }
-              })
-              .catch(() => {});
-          }
+            .catch(() => {});
         }
       })
       .catch(() => {});
@@ -2414,7 +2387,7 @@ export default function App() {
   const handleCookieAccept = () => {
     try { localStorage.setItem("alitrack_cookie_consent","all"); } catch {}
     setShowCookie(false);
-    // TODO: GA4·카카오 픽셀 활성화
+    // TODO: GA4 활성화
   };
   const handleCookieDecline = () => {
     try { localStorage.setItem("alitrack_cookie_consent","essential"); } catch {}
