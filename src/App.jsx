@@ -402,9 +402,9 @@ const ProductCard = ({ product:p, onProduct }) => {
         <div className="flex items-center gap-1.5">
           <p className="text-base font-extrabold text-gray-900">{fmt(p.price)}</p>
           {p.discount > 0
-            ? <span className="text-[11px] font-bold text-blue-500">▼ {p.discount}%</span>
+            ? <span className="text-[11px] font-bold text-red-500">▼ {p.discount}%</span>
             : p.discount < 0
-            ? <span className="text-[11px] font-bold text-red-500">▲ {Math.abs(p.discount)}%</span>
+            ? <span className="text-[11px] font-bold text-blue-500">▲ {Math.abs(p.discount)}%</span>
             : null}
         </div>
         <p className="text-[9px] text-gray-400 leading-tight">*API 참고가 · 실제가 다를 수 있음</p>
@@ -1049,7 +1049,7 @@ const buildTimeline = (hist, currentPrice) => {
       date:  pt.date,
       price: pt.price,
       label: isMin ? "역대최저" : isMax ? "최고가" : isUp ? "가격상승" : isDown ? "가격하락" : "변동없음",
-      color: isMin ? "#EF4444" : isMax ? "#6366F1" : isUp ? "#F97316" : "#00C07F",
+      color: isMin ? "#EF4444" : isMax ? "#6366F1" : isUp ? "#3B82F6" : "#EF4444",
       icon:  isMin ? "🏆" : isMax ? "📈" : isUp ? "▲" : "▼",
     });
   });
@@ -1569,9 +1569,9 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
               <div className="flex items-center gap-2">
                 <p className="text-2xl font-extrabold text-gray-900">{fmt(product.price)}</p>
                 {product.discount > 0
-                  ? <span className="text-base font-bold text-blue-500">▼ {product.discount}%</span>
+                  ? <span className="text-base font-bold text-red-500">▼ {product.discount}%</span>
                   : product.discount < 0
-                  ? <span className="text-base font-bold text-red-500">▲ {Math.abs(product.discount)}%</span>
+                  ? <span className="text-base font-bold text-blue-500">▲ {Math.abs(product.discount)}%</span>
                   : null}
               </div>
               <p className="text-sm text-gray-400 line-through">{fmt(product.orig)}</p>
@@ -1948,7 +1948,7 @@ const PwaInstallBanner = ({ onInstall, onDismiss }) => (
 // ⑦ 가격기록 화면 — 데이터 기반 쇼핑 성과 대시보드
 // ═══════════════════════════════════════════════════════════════════
 
-// 미니 스파크라인 (SVG)
+// 미니 스파크라인 (SVG) — ProductCard·DetailScreen 용도 유지
 const Sparkline = ({ prices, color = "#FF5A1F", h = 28 }) => {
   if (!prices || prices.length < 2) return null;
   const min = Math.min(...prices), max = Math.max(...prices);
@@ -1964,14 +1964,108 @@ const Sparkline = ({ prices, color = "#FF5A1F", h = 28 }) => {
   );
 };
 
+// ── 볼린저 밴드 차트 — 누적 절감액 카드 전용 ──────────────────────────
+const BollingerSavingsChart = ({ data }) => {
+  if (!data || data.length < 3) return null;
+  const W = 280, H = 56;
+  const PERIOD = Math.min(5, Math.max(2, Math.floor(data.length / 2)));
+
+  const sma = data.map((_, i) => {
+    const sl = data.slice(Math.max(0, i - PERIOD + 1), i + 1);
+    return sl.reduce((a, b) => a + b, 0) / sl.length;
+  });
+  const band = data.map((_, i) => {
+    const sl = data.slice(Math.max(0, i - PERIOD + 1), i + 1);
+    const m  = sl.reduce((a, b) => a + b, 0) / sl.length;
+    return 2 * Math.sqrt(sl.reduce((a, b) => a + (b - m) ** 2, 0) / sl.length);
+  });
+  const upper = sma.map((s, i) => s + band[i]);
+  const lower = sma.map((s, i) => Math.max(0, s - band[i]));
+
+  const allV  = [...data, ...upper, ...lower];
+  const min   = Math.min(...allV);
+  const max   = Math.max(...allV);
+  const range = max - min || 1;
+  const n     = data.length - 1 || 1;
+
+  const px = (i) => ((i / n) * (W - 4) + 2).toFixed(1);
+  const py = (v)  => (2 + ((max - v) / range) * (H - 4)).toFixed(1);
+  const pts = (arr) => arr.map((v, i) => `${px(i)},${py(v)}`).join(" ");
+
+  const uStr = upper.map((v, i) => `${px(i)},${py(v)}`).join(" L ");
+  const lStr = [...lower].reverse().map((v, i) => `${px(n - i)},${py(v)}`).join(" L ");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: H, display: "block" }}>
+      {/* 밴드 영역 */}
+      <path d={`M ${uStr} L ${lStr} Z`} fill="rgba(255,255,255,0.13)" />
+      {/* 상단 밴드 */}
+      <polyline points={pts(upper)} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1" strokeDasharray="3,2" />
+      {/* 하단 밴드 */}
+      <polyline points={pts(lower)} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1" strokeDasharray="3,2" />
+      {/* 중심 이동평균 */}
+      <polyline points={pts(sma)} fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="1.5" />
+      {/* 실제 절감액 라인 */}
+      <polyline points={pts(data)} fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+// ── 쇼핑 캔들 차트 — PriceHistoryItem 전용 ───────────────────────────
+// 빨간 캔들 = 가격 하락 (구매 기회), 파란 캔들 = 가격 상승 (대기 권장)
+const ShoppingCandleChart = ({ history }) => {
+  if (!history || history.length < 4) return null;
+  const W = 280, H = 52, PAD = 4;
+
+  const CHUNK = Math.max(1, Math.ceil(history.length / 9));
+  const candles = [];
+  for (let i = 0; i < history.length; i += CHUNK) {
+    const wk = history.slice(i, i + CHUNK);
+    if (!wk.length) continue;
+    const open  = wk[0].price;
+    const close = wk[wk.length - 1].price;
+    candles.push({ open, close, high: Math.max(...wk.map(d => d.price)), low: Math.min(...wk.map(d => d.price)) });
+  }
+  if (candles.length < 2) return null;
+
+  const allP  = candles.flatMap(c => [c.high, c.low]);
+  const min   = Math.min(...allP);
+  const max   = Math.max(...allP);
+  const range = max - min || 1;
+
+  const slotW   = (W - PAD * 2) / candles.length;
+  const candleW = Math.max(3, slotW * 0.55);
+  const cx = (i) => PAD + i * slotW + slotW / 2;
+  const py = (v)  => PAD + ((max - v) / range) * (H - PAD * 2);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: H, display: "block" }}>
+      {candles.map((c, i) => {
+        const isDown  = c.close <= c.open;
+        const color   = isDown ? "#EF4444" : "#3B82F6";
+        const bodyTop = py(Math.max(c.open, c.close));
+        const bodyH   = Math.max(1.5, py(Math.min(c.open, c.close)) - bodyTop);
+        const x = cx(i);
+        return (
+          <g key={i}>
+            <line x1={x} y1={py(c.high)} x2={x} y2={py(c.low)} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+            <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} fill={color} rx="1.5" />
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
 const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
-  const seed      = useMemo(() => idToSeed(String(item.productId)), [item.productId]);
+  const safeId    = String(item.id || item.productId || "");
+  const seed      = useMemo(() => (safeId ? idToSeed(safeId) : 0), [safeId]);
   const history   = useMemo(() => generateHistory(item.price, seed), [item.price, seed]);
   const allLow    = useMemo(() => Math.min(...history.map(d => d.price)), [history]);
-  const sparkPrices = useMemo(() => history.slice(-20).map(d => d.price), [history]);
   const vsAllLow  = item.price - allLow;
   const isAtLow   = vsAllLow <= 0;
-  const affiliate = buildAffiliateUrl(item.productId, item.affiliate_url);
+  const affiliate = buildAffiliateUrl(item.productId || safeId, item.affiliate_url);
+  const normalized = useMemo(() => ({ ...item, id: safeId }), [item, safeId]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-50/80">
@@ -1988,7 +2082,7 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
             <p className="text-[11px] text-gray-400 line-clamp-1 leading-tight">{item.name || "상품명 없음"}</p>
             <p className="text-[15px] font-extrabold text-gray-900 mt-0.5 leading-tight">{fmt(item.price)}</p>
             {isAtLow ? (
-              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 mt-1">
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-full px-2 py-0.5 mt-1">
                 💰 현재가: 역대 최저가 달성
               </span>
             ) : (
@@ -2004,15 +2098,19 @@ const PriceHistoryItem = ({ item, onProduct, onAlert, hasAlert }) => {
           </button>
         </div>
 
-        {/* 미니 스파크라인 */}
-        <button className="w-full mt-2 block" onClick={() => onProduct(item)}>
-          <Sparkline prices={sparkPrices} color={isAtLow ? "#10B981" : "#FF5A1F"} h={28}/>
+        {/* 쇼핑 캔들 차트 */}
+        <button className="w-full mt-2 block" onClick={() => onProduct(normalized)}>
+          <ShoppingCandleChart history={history} />
+          <div className="flex justify-end gap-3 mt-0.5 px-0.5">
+            <span className="text-[9px] text-red-400 font-semibold">● 가격하락</span>
+            <span className="text-[9px] text-blue-400 font-semibold">● 가격상승</span>
+          </div>
         </button>
 
         {/* 하단: 상세보기 텍스트 링크 + 구매 버튼 */}
         <div className="flex items-center justify-between py-2.5 border-t border-gray-50 mt-1">
-          <button onClick={() => onProduct(item)}
-            className="text-[11px] font-semibold text-gray-400 active:text-gray-600 transition px-1">
+          <button onClick={() => onProduct(normalized)}
+            className="text-[11px] font-semibold text-orange-500 active:text-orange-600 transition px-1">
             상세 분석 →
           </button>
           <a href={affiliate} target="_blank" rel="noopener noreferrer sponsored"
@@ -2127,13 +2225,22 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
               </p>
             </div>
           </div>
-          {savingsLine.length > 1 && (
-            <div className="mt-3 opacity-90" style={{ marginLeft: -8, marginRight: -8 }}>
-              <Sparkline prices={savingsLine} color="rgba(255,255,255,0.85)" h={40}/>
+          {savingsLine.length > 2 && (
+            <div className="mt-3" style={{ marginLeft: -8, marginRight: -8 }}>
+              <BollingerSavingsChart data={savingsLine} />
+              <div className="flex justify-end gap-3 px-2 mt-0.5 opacity-70">
+                <span className="text-[9px] text-white font-semibold">─ 실제</span>
+                <span className="text-[9px] text-white font-semibold opacity-70">─ 이동평균</span>
+                <span className="text-[9px] text-white font-semibold opacity-50">- - 밴드</span>
+              </div>
             </div>
           )}
-          {totalSavings === 0 && (
+          {totalSavings === 0 ? (
             <p className="text-[11px] opacity-60 mt-3">상품 상세 페이지를 방문하면 절감액이 쌓여요</p>
+          ) : (
+            <p className="text-[10px] opacity-55 mt-2 leading-relaxed">
+              탐색한 상품의 알리 기준 원가 대비 할인가 차액을 누적한 예상 절감액이에요. API 참고가 기준이며 실제 결제 금액과 다를 수 있어요.
+            </p>
           )}
         </div>
       </div>
