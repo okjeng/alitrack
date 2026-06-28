@@ -116,7 +116,7 @@ async def kakao_login():
         "redirect_uri":  settings.KAKAO_REDIRECT_URI,
         "response_type": "code",
         "state":         state,
-        "scope":         "profile_nickname,profile_image",
+        "scope":         "profile_nickname",
     })
     resp = RedirectResponse(url=url)
     resp.set_cookie("oauth_state", state, max_age=600, httponly=False, secure=True, samesite="none")
