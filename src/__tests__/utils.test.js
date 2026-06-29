@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  fmt, avg60, idToSeed,
+  fmt, avg60,
   mapProduct, buildAffiliateUrl, rankBySearch, generateHistory,
 } from "../utils.js";
 
