@@ -1,4 +1,5 @@
 /*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.channel.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://placehold.co https://alitrack.kr https://ae01.alicdn.com; connect-src 'self' https://alitrack-production.up.railway.app https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://cdn.channel.io https://api.channel.io; font-src 'self' data:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
