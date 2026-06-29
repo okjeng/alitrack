@@ -11,6 +11,13 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import {
+  trackEvent, fmt, avg60, idToSeed,
+  mapProduct, buildAffiliateUrl, copyToClipboard, generateHistory, rankBySearch,
+  getGuestId, getLocalAlerts, saveLocalAlert, removeLocalAlert,
+  getLocalWishlist, toggleLocalWish, getPriceHistory, savePriceHistory,
+  ALI_TRACKING_ID,
+} from "./utils.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // 더미 상품 템플릿 — API 연동 시 이 블록 교체
@@ -42,29 +49,6 @@ const PAGE_SIZE = 20;
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://alitrack-production.up.railway.app";
 
-// API 응답 → 프론트 product 객체 변환
-const mapProduct = (p) => {
-  const disc = p.discount || 0;
-  const tag =
-    disc >= 50 ? "역대최저" :
-    disc >= 30 ? "핫딜" :
-    disc >= 20 ? "최저가근접" :
-    disc >= 10 ? "특가" : "핫딜";
-  return {
-    id:           String(p.id || ""),
-    name:         p.name || "",
-    shortName:    (p.name || "").split(/\s+/).slice(0, 3).join(" "),
-    price:        p.price || 0,
-    orig:         p.orig_price || p.price || 0,
-    discount:     disc,
-    image:        p.image || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
-    tag,
-    deliveryDays: p.delivery_days || 5,
-    rating:       p.rating || 0,
-    reviews:      p.reviews || 0,
-    affiliate_url:p.affiliate_url || "",
-  };
-};
 
 // ── 핵심: 더미 페이지 생성 함수 ──────────────────────────────────
 // API 연동 시 이 함수만 fetch('/api/products?page='+page) 로 교체
@@ -138,112 +122,10 @@ const PROMO_BANNERS = [
 // ═══════════════════════════════════════════════════════════════════
 // 유틸
 // ═══════════════════════════════════════════════════════════════════
-// GA4 이벤트 헬퍼 — window.gtag 없으면 무시
+// 순수 유틸 함수는 src/utils.js 에서 import
 // ═══════════════════════════════════════════════════════════════════
-const trackEvent = (name, params = {}) => {
-  try { if (typeof window.gtag === "function") window.gtag("event", name, params); } catch {}
-};
-
-// ═══════════════════════════════════════════════════════════════════
-const fmt       = (n) => n.toLocaleString("ko-KR") + "원";
-const avg60     = (h) => Math.round(h.reduce((s,d) => s+d.price, 0) / h.length / 100) * 100;
-const idToSeed  = (id) => id.split("").reduce((a,c) => a + c.charCodeAt(0), 0) * 9301;
-const NAV_H     = 56;
-const BTN_H     = 72;
-
-// ─── 게스트 유틸 ─────────────────────────────────────────────────────
-const getGuestId = () => {
-  try {
-    let id = localStorage.getItem("alitrack_guest_id");
-    if (!id) {
-      const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
-      id = `ALI-${rand}`;
-      localStorage.setItem("alitrack_guest_id", id);
-    }
-    return id;
-  } catch { return "ALI-GUEST"; }
-};
-
-const getLocalAlerts = () => {
-  try { return JSON.parse(localStorage.getItem("alitrack_local_alerts") || "[]"); } catch { return []; }
-};
-const saveLocalAlert = (alert) => {
-  try {
-    const list = getLocalAlerts().filter(a => a.product_id !== alert.product_id);
-    list.push(alert);
-    localStorage.setItem("alitrack_local_alerts", JSON.stringify(list));
-  } catch {}
-};
-const removeLocalAlert = (productId) => {
-  try {
-    localStorage.setItem("alitrack_local_alerts", JSON.stringify(getLocalAlerts().filter(a => a.product_id !== productId)));
-  } catch {}
-};
-
-const getLocalWishlist = () => {
-  try { return JSON.parse(localStorage.getItem("alitrack_wishlist") || "[]"); } catch { return []; }
-};
-const toggleLocalWish = (product) => {
-  try {
-    const list = getLocalWishlist();
-    const idx  = list.findIndex(p => p.id === product.id);
-    if (idx >= 0) { list.splice(idx, 1); } else { list.push({ id: product.id, name: product.name, price: product.price, image_url: product.image }); }
-    localStorage.setItem("alitrack_wishlist", JSON.stringify(list));
-    return idx < 0;
-  } catch { return false; }
-};
-
-const getPriceHistory = () => {
-  try { return JSON.parse(localStorage.getItem("alitrack_price_history") || "[]"); } catch { return []; }
-};
-const savePriceHistory = (product) => {
-  try {
-    let hist = getPriceHistory().filter(h => h.productId !== String(product.id));
-    hist.unshift({
-      productId: String(product.id),
-      id: product.id,
-      name: product.name || product.title || "",
-      image: product.image || "",
-      price: product.price || 0,
-      orig: product.orig || product.price || 0,
-      affiliate_url: product.affiliate_url || "",
-      timestamp: Date.now(),
-    });
-    localStorage.setItem("alitrack_price_history", JSON.stringify(hist.slice(0, 50)));
-  } catch {}
-};
-
-const ALI_TRACKING_ID = "alitrack_kr";
-// s.click.aliexpress.com은 generic 페이지로 이동 — product_detail_url 또는 직접 상품 URL 사용
-const buildAffiliateUrl = (productId, affiliateUrl) => {
-  if (affiliateUrl && !affiliateUrl.includes("s.click.aliexpress.com")) return affiliateUrl;
-  return `https://ko.aliexpress.com/item/${productId}.html?aff_fcid=${ALI_TRACKING_ID}&aff_platform=portals-tool&sk=${ALI_TRACKING_ID}&aff_trace_key=${ALI_TRACKING_ID}`;
-};
-
-const copyToClipboard = async (text) => {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-  } else {
-    const el = document.createElement("textarea");
-    el.value = text; el.style.cssText = "position:fixed;opacity:0";
-    document.body.appendChild(el); el.focus(); el.select();
-    document.execCommand("copy"); document.body.removeChild(el);
-  }
-};
-
-const generateHistory = (current, seed) => {
-  const pts = []; const today = new Date();
-  let rng = seed;
-  const rand = () => { rng = (rng * 1664525 + 1013904223) & 0xffffffff; return (rng >>> 0) / 0xffffffff; };
-  let p = current * 1.4;
-  for (let i = 60; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    p = i === 0 ? current : Math.max(current * 1.02, p + (rand() - 0.52) * current * 0.07);
-    if (i % 4 === 0 || i === 0)
-      pts.push({ date:`${d.getMonth()+1}/${d.getDate()}`, price:Math.round(p/100)*100 });
-  }
-  return pts;
-};
+const NAV_H = 56;
+const BTN_H = 72;
 
 // ═══════════════════════════════════════════════════════════════════
 // 핵심 훅: useInfiniteProducts — AliExpress API 연동
@@ -254,6 +136,7 @@ const useInfiniteProducts = (keyword = "", sort = "default") => {
   const [loading, setLoading]         = useState(false);
   const [hasMore, setHasMore]         = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [error, setError]             = useState(null);
   const loaderRef   = useRef(null);
   const loadingRef  = useRef(false);
   const hasMoreRef  = useRef(true);
@@ -262,10 +145,14 @@ const useInfiniteProducts = (keyword = "", sort = "default") => {
     if (loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
     setLoading(true);
+    setError(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
       const params = new URLSearchParams({ page: pageNum, size: PAGE_SIZE, sort });
       if (keyword) params.set("keyword", keyword);
-      const res  = await fetch(`${API_BASE}/api/ali/products?${params}`);
+      const res  = await fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal });
+      clearTimeout(timeout);
       if (!res.ok) throw new Error(res.status);
       const data = await res.json();
       const newItems = (data.products || []).map(mapProduct);
@@ -281,7 +168,8 @@ const useInfiniteProducts = (keyword = "", sort = "default") => {
         setPage(pageNum);
       }
     } catch (e) {
-      console.error("상품 로드 실패:", e);
+      clearTimeout(timeout);
+      setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
     } finally {
       loadingRef.current = false;
       setLoading(false);
@@ -306,7 +194,7 @@ const useInfiniteProducts = (keyword = "", sort = "default") => {
     return () => obs.disconnect();
   }, [page, fetchPage]);
 
-  return { items, loading, initialized, loaderRef, hasMore };
+  return { items, loading, initialized, loaderRef, hasMore, error, retry: () => fetchPage(page + 1) };
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -426,28 +314,10 @@ const ProductCard = ({ product:p, onProduct }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// 검색어 관련성 기반 정렬
-// ═══════════════════════════════════════════════════════════════════
-const rankBySearch = (items, keyword) => {
-  if (!keyword) return items;
-  const kw = keyword.toLowerCase().trim();
-  const words = kw.split(/\s+/).filter(Boolean);
-  const score = (name) => {
-    const n = (name || "").toLowerCase();
-    if (n === kw) return 4;
-    if (n.startsWith(kw)) return 3;
-    if (n.includes(kw)) return 2;
-    const hits = words.filter(w => n.includes(w)).length;
-    return hits > 0 ? hits / words.length : 0;
-  };
-  return [...items].sort((a, b) => score(b.name) - score(a.name));
-};
-
-// ═══════════════════════════════════════════════════════════════════
 // ✅ 무한 스크롤 상품 그리드 (공용) — 홈 / 카테고리 피드 공유
 // ═══════════════════════════════════════════════════════════════════
 const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }) => {
-  const { items, loading, initialized, loaderRef, hasMore } = useInfiniteProducts(keyword, sort);
+  const { items, loading, initialized, loaderRef, hasMore, error, retry } = useInfiniteProducts(keyword, sort);
   const displayItems = useMemo(
     () => rankKeyword ? rankBySearch(items, rankKeyword) : items,
     [items, rankKeyword]
@@ -457,18 +327,30 @@ const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }) =
     <div>
       {title && <p className="text-sm font-bold text-gray-900 mb-3">{title}</p>}
 
+      {/* API 오류 */}
+      {error && (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm font-bold text-gray-700">{error}</p>
+          <button onClick={retry}
+            className="px-5 py-2.5 rounded-2xl bg-orange-500 text-white text-xs font-bold active:bg-orange-600 transition">
+            다시 시도
+          </button>
+        </div>
+      )}
+
       {/* 첫 로드 전 — 스켈레톤 전체 표시 */}
-      {!initialized ? (
+      {!error && !initialized ? (
         <div className="grid grid-cols-2 gap-3">
           {Array(8).fill(0).map((_,i) => <SkeletonCard key={i} />)}
         </div>
-      ) : displayItems.length === 0 && !loading ? (
+      ) : !error && displayItems.length === 0 && !loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <span className="text-4xl">🔍</span>
           <p className="text-sm font-bold text-gray-700">검색 결과가 없어요</p>
           <p className="text-xs text-gray-400 text-center">다른 검색어를 입력하거나<br/>맞춤법을 확인해 주세요</p>
         </div>
-      ) : (
+      ) : !error ? (
         <>
           <div className="grid grid-cols-2 gap-3">
             {displayItems.map(p => <ProductCard key={p.id} product={p} onProduct={onProduct} />)}
@@ -485,36 +367,14 @@ const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }) =
             )}
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// 하단 네비
+// 하단 네비 (NAV_ITEMS_FULL 5탭 — App 컴포넌트 내에 정의)
 // ═══════════════════════════════════════════════════════════════════
-const NAV_ITEMS = [
-  { id:"home",     icon:"🏠", label:"홈(핫딜)" },
-  { id:"history",  icon:"📈", label:"가격기록" },
-  { id:"wishlist", icon:"❤️", label:"찜한상품" },
-  { id:"mypage",   icon:"👤", label:"나의기록" },
-];
-
-const BottomNav = ({ active, onNav }) => (
-  <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center"
-       style={{ background:"rgba(255,255,255,0.97)", backdropFilter:"blur(12px)",
-                paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
-    <div className="w-full max-w-[600px] flex border-t border-gray-100">
-      {NAV_ITEMS.map(n => (
-        <button key={n.id} onClick={() => onNav(n.id)}
-          className={`flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors ${active===n.id?"text-orange-500":"text-gray-400"}`}>
-          <span className="text-xl leading-none">{n.icon}</span>
-          <span className="text-[10px] font-semibold">{n.label}</span>
-        </button>
-      ))}
-    </div>
-  </nav>
-);
 
 // ═══════════════════════════════════════════════════════════════════
 // 모달: 이메일 회원가입 / 로그인
@@ -1553,8 +1413,6 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
   const coupangUrl  = useMemo(() => buildCoupangUrl(keyword), [keyword]);
   const [copied, setCopied] = useState(false);
 
-  // 쿠팡 링크 클릭 시 로그 (API 연동 후 클릭 추적으로 활용)
-  const handleClick = () => {};
 
   return (
     <div className="rounded-3xl overflow-hidden border border-gray-100">
@@ -1592,7 +1450,6 @@ const CoupangCompareCard = ({ productName, currentPrice }) => {
 
         {/* 쿠팡 검색 버튼 */}
         <a href={coupangUrl} target="_blank" rel="noopener noreferrer sponsored"
-           onClick={handleClick}
            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white text-sm font-extrabold active:opacity-90 transition"
            style={{background:"linear-gradient(90deg,#C0392B,#E74C3C)"}}>
           <span>🛒</span>
@@ -3427,7 +3284,9 @@ export default function App() {
   const handleCookieAccept = () => {
     try { localStorage.setItem("alitrack_cookie_consent","all"); } catch {}
     setShowCookie(false);
-    // TODO: GA4 활성화
+    if (typeof window.gtag === "function") {
+      window.gtag("consent", "update", { analytics_storage: "granted" });
+    }
   };
   const handleCookieDecline = () => {
     try { localStorage.setItem("alitrack_cookie_consent","essential"); } catch {}
