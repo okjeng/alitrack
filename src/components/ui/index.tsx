@@ -15,7 +15,7 @@ export const Toast = ({ msg, visible }: ToastProps) => (
 );
 
 export const SkeletonCard = () => (
-  <div className="rounded-2xl bg-gray-100 overflow-hidden animate-pulse">
+  <div className="rounded-2xl bg-gray-100 overflow-hidden" style={{ animation:"shimmer 1.4s ease-in-out infinite" }}>
     <div className="aspect-square bg-gray-200" />
     <div className="p-3 space-y-2">
       <div className="h-3 bg-gray-200 rounded w-3/4" />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Product } from "../types";
 import { mapProduct } from "../utils";
 import { PAGE_SIZE, API_BASE } from "../data/constants";
@@ -20,62 +20,78 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
   const [hasMore, setHasMore]         = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const loaderRef   = useRef<HTMLDivElement | null>(null);
-  const loadingRef  = useRef(false);
-  const hasMoreRef  = useRef(true);
+  const loaderRef      = useRef<HTMLDivElement | null>(null);
+  const loadingRef     = useRef(false);
+  const hasMoreRef     = useRef(true);
+  const pageRef        = useRef(0);
+  const keywordRef     = useRef(keyword);
+  const sortRef        = useRef(sort);
+  const initializedRef = useRef(false);
 
-  const fetchPage = useCallback(async (pageNum: number) => {
+  const fetchPage = (pageNum: number) => {
     if (loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
     setLoading(true);
     setError(null);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    try {
-      const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort });
-      if (keyword) params.set("keyword", keyword);
-      const res  = await fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
-      const newItems: Product[] = (data.products || []).map(mapProduct);
-      if (newItems.length === 0) {
-        hasMoreRef.current = false;
-        setHasMore(false);
-      } else {
-        setItems(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const unique = newItems.filter(p => !existingIds.has(p.id));
-          return [...prev, ...unique];
-        });
-        setPage(pageNum);
-      }
-    } catch (e) {
-      clearTimeout(timeout);
-      setError((e as Error).name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
-      if (!initialized) setInitialized(true);
-    }
-  }, [initialized, keyword, sort]);
+    const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: sortRef.current });
+    if (keywordRef.current) params.set("keyword", keywordRef.current);
+    fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json();
+      })
+      .then((data: { products?: unknown[] }) => {
+        const newItems: Product[] = (data.products || []).map(p => mapProduct(p as Record<string, unknown>));
+        if (newItems.length === 0) {
+          hasMoreRef.current = false;
+          setHasMore(false);
+        } else {
+          setItems(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const unique = newItems.filter(p => !existingIds.has(p.id));
+            if (unique.length === 0) return prev;
+            return [...prev, ...unique];
+          });
+          pageRef.current = pageNum;
+          setPage(pageNum);
+        }
+      })
+      .catch((e: Error) => {
+        clearTimeout(timeout);
+        setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        loadingRef.current = false;
+        setLoading(false);
+        if (!initializedRef.current) { initializedRef.current = true; setInitialized(true); }
+      });
+  };
 
-  useEffect(() => { fetchPage(1); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 최초 로드
+  useEffect(() => {
+    keywordRef.current = keyword;
+    sortRef.current    = sort;
+    fetchPage(1);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 무한 스크롤
   useEffect(() => {
     const el = loaderRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingRef.current && hasMoreRef.current) {
-          fetchPage(page + 1);
+          fetchPage(pageRef.current + 1);
         }
       },
       { threshold: 0.1, rootMargin: "200px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [page, fetchPage]);
+  }, [initialized]); // initialized가 true가 된 후 observer 재연결
 
-  return { items, loading, initialized, loaderRef, hasMore, error, retry: () => fetchPage(page + 1) };
+  return { items, loading, initialized, loaderRef, hasMore, error, retry: () => fetchPage(pageRef.current + 1) };
 };

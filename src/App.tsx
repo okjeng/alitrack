@@ -258,8 +258,8 @@ export default function App() {
         .scrollbar-none{-ms-overflow-style:none;scrollbar-width:none;}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
         .animate-slideUp{animation:slideUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards;}
-        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
-        .animate-pulse{animation:pulse 1.5s cubic-bezier(0.4,0,0.6,1) infinite;}
+        @keyframes shimmer{0%,100%{opacity:1;}50%{opacity:.75;}}
+        .animate-pulse{animation:shimmer 1.4s ease-in-out infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         .animate-spin{animation:spin 0.8s linear infinite;}
         .line-clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}

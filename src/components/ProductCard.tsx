@@ -16,10 +16,10 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
   return (
     <button onClick={() => onProduct(p)} aria-label={`${p.name} 상세보기`}
       className="rounded-2xl bg-[#F7F7F8] overflow-hidden text-left active:opacity-75 transition w-full">
-      <div className="relative">
+      <div className="relative bg-gray-100">
         <img src={p.image} alt={p.shortName} loading="lazy"
           className="w-full aspect-square object-cover"
-          onError={e => { e.currentTarget.src = "https://placehold.co/320x320/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror = null; }} />
+          onError={e => { e.currentTarget.src = "https://placehold.co/320x320/EEF2FF/6366F1?text=%F0%9F%93%A6"; e.currentTarget.onerror = null; }} />
         <span className={`absolute top-2 left-2 text-[9px] font-extrabold text-white px-1.5 py-0.5 rounded-full ${TAG_COLORS[p.tag]||"bg-gray-500"}`}>
           {p.tag}
         </span>
@@ -43,7 +43,7 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
             : null}
         </div>
         <span className="inline-flex items-center gap-1 text-[9px] text-green-600 leading-tight">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" style={{ boxShadow:"0 0 4px #22c55e", animation:"pulse 2s infinite" }} />
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" style={{ boxShadow:"0 0 4px #22c55e" }} />
           실시간 가격 동기화 <span className="text-[8px] text-gray-400">(환율 반영)</span>
         </span>
         {diff > 0
