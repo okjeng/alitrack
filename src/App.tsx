@@ -6,7 +6,6 @@ import { API_BASE, NAV_H } from "./data/constants";
 // 즉시 로드 — 초기 화면에 항상 필요한 컴포넌트
 import { Toast } from "./components/ui/index";
 import { OnboardingScreen } from "./components/OnboardingScreen";
-import { CookieBanner } from "./components/CookieBanner";
 
 // 지연 로드 — 사용자 액션 후 필요한 컴포넌트
 const FeedbackSheet           = lazy(() => import("./modals/FeedbackSheet").then(m => ({ default: m.FeedbackSheet })));
@@ -75,9 +74,6 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try { return !localStorage.getItem("alitrack_onboarded"); } catch { return false; }
   });
-  const [showCookie, setShowCookie] = useState<boolean>(() => {
-    try { return !localStorage.getItem("alitrack_cookie_consent"); } catch { return false; }
-  });
   const [pwaInstallable, setPwaInstallable] = useState<boolean>(() => !!window.__pwa);
   const [showIosGuide, setShowIosGuide]         = useState<boolean>(false);
   const [showAndroidGuide, setShowAndroidGuide] = useState<boolean>(false);
@@ -85,11 +81,12 @@ export default function App() {
   const isAndroid    = /Android/i.test(navigator.userAgent);
   const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || !!(navigator as Navigator & { standalone?: boolean }).standalone;
-  const [installBannerDismissed, setInstallBannerDismissed] = useState<boolean>(
-    () => localStorage.getItem("alitrack_install_dismissed") === "1"
-  );
-  const showInstallMenu   = !isStandalone && (pwaInstallable || isIOS || isAndroid);
-  const showInstallBanner = showInstallMenu && !installBannerDismissed;
+
+  // 쿠키 동의 자동 처리
+  useEffect(() => {
+    try { localStorage.setItem("alitrack_cookie_consent", "all"); } catch {}
+    if (typeof window.gtag === "function") window.gtag("consent", "update", { analytics_storage: "granted" });
+  }, []);
 
   useEffect(() => {
     const onInstallable = () => setPwaInstallable(true);
@@ -202,16 +199,6 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [restoreScroll]);
 
-  const handleCookieAccept = () => {
-    try { localStorage.setItem("alitrack_cookie_consent", "all"); } catch {}
-    setShowCookie(false);
-    if (typeof window.gtag === "function") window.gtag("consent", "update", { analytics_storage: "granted" });
-  };
-  const handleCookieDecline = () => {
-    try { localStorage.setItem("alitrack_cookie_consent", "essential"); } catch {}
-    setShowCookie(false);
-  };
-
   const handleOnboardingDone = () => {
     try { localStorage.setItem("alitrack_onboarded", "1"); } catch {}
     setShowOnboarding(false);
@@ -229,11 +216,6 @@ export default function App() {
     setShowAndroidGuide(true);
   };
 
-  const dismissInstallBanner = () => {
-    localStorage.setItem("alitrack_install_dismissed", "1");
-    setInstallBannerDismissed(true);
-  };
-
   const NAV_ITEMS_FULL = [
     { id: "home",     icon: "🏠", label: "홈(핫딜)" },
     { id: "history",  icon: "📈", label: "가격기록" },
@@ -244,7 +226,7 @@ export default function App() {
 
   const renderScreen = () => {
     switch (screen) {
-      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast} onInstall={handlePwaInstall} showInstallBanner={showInstallBanner} onDismissInstall={dismissInstallBanner}/>;
+      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
       case "feed":     return selCat ? <CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/> : null;
       case "detail":   return selProduct ? <DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/> : null;
       case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct} showToast={showToast}/>;
@@ -264,7 +246,7 @@ export default function App() {
       case "howto":    return <HowToUseScreen onBack={goBack}/>;
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
-      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast} onInstall={handlePwaInstall} showInstallBanner={showInstallBanner} onDismissInstall={dismissInstallBanner}/>;
+      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
     }
   };
 
@@ -331,7 +313,6 @@ export default function App() {
         </div>
       </div>
 
-      {showCookie && <CookieBanner onAccept={handleCookieAccept} onDecline={handleCookieDecline}/>}
       <Suspense fallback={null}>
         {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} showToast={showToast}/>}
         {showNotifSettings && <NotificationSettingsSheet onClose={() => setShowNotifSettings(false)}/>}

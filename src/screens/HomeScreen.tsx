@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { copyToClipboard, trackEvent } from "../utils";
 import { PROMO_BANNERS, CATEGORIES, DISCOUNT_CODES } from "../data/constants";
-import { PwaInstallBanner } from "../components/PwaInstallBanner";
 import { InfiniteProductGrid } from "../components/InfiniteProductGrid";
 import { LegalFooter } from "../components/ui/index";
 import type { Category } from "../types";
@@ -11,12 +10,9 @@ interface HomeScreenProps {
   onProduct: (p: import("../types").Product) => void;
   showLogin: () => void;
   showToast: (msg: string) => void;
-  onInstall: () => void;
-  showInstallBanner: boolean;
-  onDismissInstall: () => void;
 }
 
-export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showToast, onInstall, showInstallBanner, onDismissInstall }: HomeScreenProps) => {
+export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showToast }: HomeScreenProps) => {
   const [tab, setTab]               = useState("hotdeal");
   const [bannerIdx, setBannerIdx]   = useState(0);
   const [catLoading, setCatLoading] = useState(false);
@@ -71,10 +67,6 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-5">
-      {showInstallBanner && (
-        <PwaInstallBanner onInstall={onInstall} onDismiss={onDismissInstall} />
-      )}
-
       <div className="relative flex gap-2">
         <div className="relative flex-1">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>

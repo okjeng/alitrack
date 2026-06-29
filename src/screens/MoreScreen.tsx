@@ -67,23 +67,19 @@ export const MoreScreen = ({ onFeedback: _onFeedback, onPrivacy, onTerms, onHowT
               <span className="flex-1 text-sm font-semibold text-gray-800 text-left">알림 설정</span>
               <span className="text-gray-400 text-xs">›</span>
             </button>
-            {!isStandalone && (
-              <button onClick={onInstall}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
-                <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A1F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <span className="block text-sm font-semibold text-gray-800">AliTrack 전용 앱 설치</span>
-                  <span className="text-[10px] text-gray-400">홈 화면에 추가 · 앱처럼 빠르게 실행</span>
-                </div>
-                <span className="text-gray-400 text-xs">›</span>
-              </button>
-            )}
+            <button onClick={isStandalone ? () => showToast("이미 앱으로 설치되어 있어요 ✅") : onInstall}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-gray-100 active:bg-gray-100 transition">
+              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📲</div>
+              <div className="flex-1 text-left">
+                <span className="block text-sm font-semibold text-gray-800">
+                  {isStandalone ? "AliTrack 앱 설치됨 ✅" : "AliTrack 앱 설치하기"}
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  {isStandalone ? "홈 화면에서 앱으로 실행 중이에요" : "홈 화면 추가 · 앱처럼 빠르게 실행 · 알림 수신"}
+                </span>
+              </div>
+              {!isStandalone && <span className="text-gray-400 text-xs">›</span>}
+            </button>
             <button onClick={clearCache}
               className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition">
               <span className="text-lg">🗑️</span>
