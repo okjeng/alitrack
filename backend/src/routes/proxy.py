@@ -68,13 +68,17 @@ def _sanitize_product(raw: dict) -> dict:
     except (ValueError, TypeError):
         discount = 0
 
+    img_url = raw.get("product_main_image_url") or ""
+    if img_url.startswith("http://"):
+        img_url = "https://" + img_url[7:]
+
     return {
         "id":            str(raw.get("product_id", "")),
         "name":          raw.get("product_title", ""),
         "price":         price,
         "orig_price":    orig,
         "discount":      discount,
-        "image":         raw.get("product_main_image_url", ""),
+        "image":         img_url,
         "rating":        float(str(raw.get("evaluate_rate", "0") or "0").replace("%", "") or 0),
         "reviews":       int(raw.get("lastest_volume", 0) or 0),
         "delivery_days": 5,
@@ -132,7 +136,7 @@ async def get_products(
     if "error_response" in data:
         err = data["error_response"]
         logger.error(f"AliExpress 오류: code={err.get('code')} msg={err.get('msg')}")
-        raise HTTPException(status_code=502, detail=f"AliExpress API 오류: {err.get('msg')}")
+        return {"products": [], "page": page, "size": size, "total": 0}
 
     root = data.get("aliexpress_affiliate_product_query_response", {})
     resp_result = root.get("resp_result", {})
@@ -140,7 +144,7 @@ async def get_products(
 
     if resp_code not in (200, "200"):
         logger.error(f"AliExpress resp_code={resp_code} msg={resp_result.get('resp_msg')}")
-        raise HTTPException(status_code=502, detail="AliExpress 응답 오류")
+        return {"products": [], "page": page, "size": size, "total": 0}
 
     result = resp_result.get("result", {})
     raw_products = result.get("products", {}).get("product", [])

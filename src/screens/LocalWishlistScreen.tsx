@@ -45,7 +45,8 @@ export const LocalWishlistScreen = ({ onBack, onGoHome: _onGoHome, onProduct, sh
             <div key={p.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex shadow-sm">
               <button onClick={() => onProduct(toProduct(p))} className="flex-1 flex items-center gap-3 px-4 py-3 text-left">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-50" />
+                  <img src={p.image_url} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-50"
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = "https://placehold.co/56x56/F3F4F6/9CA3AF?text=🛍"; }} />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🛍️</div>
                 )}

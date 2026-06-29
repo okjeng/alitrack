@@ -23,6 +23,8 @@ export const mapProduct = (p: Record<string, unknown>): Product => {
     disc >= 30 ? "핫딜" :
     disc >= 20 ? "최저가근접" :
     disc >= 10 ? "특가" : "핫딜";
+  let imgUrl = (p.image as string) || "";
+  if (imgUrl.startsWith("http://")) imgUrl = "https://" + imgUrl.slice(7);
   return {
     id:           String(p.id || ""),
     name:         (p.name as string) || "",
@@ -30,7 +32,7 @@ export const mapProduct = (p: Record<string, unknown>): Product => {
     price:        (p.price as number) || 0,
     orig:         (p.orig_price as number) || (p.price as number) || 0,
     discount:     disc,
-    image:        (p.image as string) || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
+    image:        imgUrl || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
     tag,
     deliveryDays: (p.delivery_days as number) || 0,
     rating:       (p.rating as number) || 0,

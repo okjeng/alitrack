@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Product } from "../types";
 import { mapProduct } from "../utils";
-import { PAGE_SIZE, API_BASE } from "../data/constants";
+import { PAGE_SIZE, API_BASE, generateDummyPage } from "../data/constants";
 
 interface UseInfiniteProductsResult {
   items: Product[];
@@ -46,6 +46,13 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       .then((data: { products?: unknown[] }) => {
         const newItems: Product[] = (data.products || []).map(p => mapProduct(p as Record<string, unknown>));
         if (newItems.length === 0) {
+          if (pageNum === 1 && !initializedRef.current) {
+            return generateDummyPage(1).then(dummyItems => {
+              setItems(dummyItems);
+              pageRef.current = 1;
+              setPage(1);
+            });
+          }
           hasMoreRef.current = false;
           setHasMore(false);
         } else {
@@ -61,6 +68,14 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       })
       .catch((e: Error) => {
         clearTimeout(timeout);
+        if (pageNum === 1 && !initializedRef.current) {
+          generateDummyPage(1).then(dummyItems => {
+            setItems(dummyItems);
+            pageRef.current = 1;
+            setPage(1);
+          });
+          return;
+        }
         setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
       })
       .finally(() => {
