@@ -1,26 +1,38 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import type { Product, User, Category } from "./types";
 import { mapProduct, trackEvent, getLocalAlerts } from "./utils";
 import { API_BASE, NAV_H } from "./data/constants";
 
+// 즉시 로드 — 초기 화면에 항상 필요한 컴포넌트
 import { Toast } from "./components/ui/index";
 import { OnboardingScreen } from "./components/OnboardingScreen";
 import { CookieBanner } from "./components/CookieBanner";
-import { FeedbackSheet } from "./modals/FeedbackSheet";
-import { NotificationSettingsSheet } from "./components/MyPage";
-import { EmailAuthModal } from "./modals/EmailAuthModal";
-import { IosInstallGuide, AndroidInstallGuide } from "./components/InstallGuides";
-import { EmptyMypage, LoggedInMypage } from "./components/MyPage";
 
-import { HomeScreen } from "./screens/HomeScreen";
-import { CategoryFeedScreen } from "./screens/CategoryFeedScreen";
-import { DetailScreen } from "./screens/DetailScreen";
-import { PriceHistoryScreen } from "./screens/PriceHistoryScreen";
-import { LocalWishlistScreen } from "./screens/LocalWishlistScreen";
-import { MoreScreen } from "./screens/MoreScreen";
-import { HowToUseScreen } from "./screens/HowToUseScreen";
-import { PrivacyScreen } from "./screens/PrivacyScreen";
-import { TermsScreen } from "./screens/TermsScreen";
+// 지연 로드 — 사용자 액션 후 필요한 컴포넌트
+const FeedbackSheet           = lazy(() => import("./modals/FeedbackSheet").then(m => ({ default: m.FeedbackSheet })));
+const NotificationSettingsSheet = lazy(() => import("./components/MyPage").then(m => ({ default: m.NotificationSettingsSheet })));
+const EmailAuthModal          = lazy(() => import("./modals/EmailAuthModal").then(m => ({ default: m.EmailAuthModal })));
+const IosInstallGuide         = lazy(() => import("./components/InstallGuides").then(m => ({ default: m.IosInstallGuide })));
+const AndroidInstallGuide     = lazy(() => import("./components/InstallGuides").then(m => ({ default: m.AndroidInstallGuide })));
+const EmptyMypage             = lazy(() => import("./components/MyPage").then(m => ({ default: m.EmptyMypage })));
+const LoggedInMypage          = lazy(() => import("./components/MyPage").then(m => ({ default: m.LoggedInMypage })));
+
+// 화면 — 라우터가 전환 시 lazy 로드
+const HomeScreen         = lazy(() => import("./screens/HomeScreen").then(m => ({ default: m.HomeScreen })));
+const CategoryFeedScreen = lazy(() => import("./screens/CategoryFeedScreen").then(m => ({ default: m.CategoryFeedScreen })));
+const DetailScreen       = lazy(() => import("./screens/DetailScreen").then(m => ({ default: m.DetailScreen })));
+const PriceHistoryScreen = lazy(() => import("./screens/PriceHistoryScreen").then(m => ({ default: m.PriceHistoryScreen })));
+const LocalWishlistScreen = lazy(() => import("./screens/LocalWishlistScreen").then(m => ({ default: m.LocalWishlistScreen })));
+const MoreScreen         = lazy(() => import("./screens/MoreScreen").then(m => ({ default: m.MoreScreen })));
+const HowToUseScreen     = lazy(() => import("./screens/HowToUseScreen").then(m => ({ default: m.HowToUseScreen })));
+const PrivacyScreen      = lazy(() => import("./screens/PrivacyScreen").then(m => ({ default: m.PrivacyScreen })));
+const TermsScreen        = lazy(() => import("./screens/TermsScreen").then(m => ({ default: m.TermsScreen })));
+
+const ScreenFallback = () => (
+  <div className="flex items-center justify-center py-20">
+    <div className="w-8 h-8 border-[3px] border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+  </div>
+);
 
 declare global {
   interface Window {
@@ -289,7 +301,9 @@ export default function App() {
 
           <main ref={mainRef}
                 style={{ paddingBottom: `calc(env(safe-area-inset-bottom,0px) + ${NAV_H}px)`, overflowY: "auto", flex: 1 }}>
-            {renderScreen()}
+            <Suspense fallback={<ScreenFallback />}>
+              {renderScreen()}
+            </Suspense>
           </main>
 
           <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center"
@@ -310,11 +324,13 @@ export default function App() {
       </div>
 
       {showCookie && <CookieBanner onAccept={handleCookieAccept} onDecline={handleCookieDecline}/>}
-      {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} showToast={showToast}/>}
-      {showNotifSettings && <NotificationSettingsSheet onClose={() => setShowNotifSettings(false)}/>}
-      {showIosGuide && <IosInstallGuide onClose={() => setShowIosGuide(false)}/>}
-      {showAndroidGuide && <AndroidInstallGuide onClose={() => setShowAndroidGuide(false)} isSamsung={isSamsung}/>}
-      {loginModal && <EmailAuthModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
+      <Suspense fallback={null}>
+        {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} showToast={showToast}/>}
+        {showNotifSettings && <NotificationSettingsSheet onClose={() => setShowNotifSettings(false)}/>}
+        {showIosGuide && <IosInstallGuide onClose={() => setShowIosGuide(false)}/>}
+        {showAndroidGuide && <AndroidInstallGuide onClose={() => setShowAndroidGuide(false)} isSamsung={isSamsung}/>}
+        {loginModal && <EmailAuthModal onDismiss={handleLoginDismiss} onLoginSuccess={handleLoginSuccess}/>}
+      </Suspense>
     </>
   );
 }
