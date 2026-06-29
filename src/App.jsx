@@ -276,7 +276,7 @@ const ProductCard = ({ product:p, onProduct }) => {
   const diff = av - p.price;
 
   return (
-    <button onClick={() => onProduct(p)}
+    <button onClick={() => onProduct(p)} aria-label={`${p.name} 상세보기`}
       className="rounded-2xl bg-[#F7F7F8] overflow-hidden text-left active:opacity-75 transition w-full">
       <div className="relative">
         <img src={p.image} alt={p.shortName} loading="lazy"
@@ -742,16 +742,17 @@ const HomeScreen = ({ onCategory, onProduct, showLogin, showToast, onInstall, sh
             onFocus={e => e.target.select()}
             onKeyDown={e => e.key === "Enter" && handleSearch()}
             placeholder="알리 꿀템 검색"
+            aria-label="상품 검색"
             className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-800 placeholder-gray-400 outline-none" />
           {searchQuery && (
-            <button onClick={clearSearch}
+            <button onClick={clearSearch} aria-label="검색어 지우기"
               className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center active:bg-gray-400 transition"
               style={{fontSize:10, fontWeight:800, color:"#fff", lineHeight:1}}>
               ✕
             </button>
           )}
         </div>
-        <button onClick={handleSearch}
+        <button onClick={handleSearch} aria-label="검색 실행"
           className="px-4 py-3.5 rounded-2xl bg-orange-500 active:bg-orange-600 text-white text-sm font-bold transition flex-shrink-0">
           검색
         </button>
@@ -908,7 +909,7 @@ const CategoryFeedScreen = ({ cat, onBack, onProduct }) => {
     <div className="pb-6">
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700 active:bg-gray-200 transition flex-shrink-0">
+          <button onClick={onBack} aria-label="뒤로 가기" className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700 active:bg-gray-200 transition flex-shrink-0">
             <IconBack />
           </button>
           <div>
@@ -1497,7 +1498,7 @@ const DetailScreen = ({ product, onBack, showLogin, showToast, user }) => {
       <div style={{paddingBottom:`calc(env(safe-area-inset-bottom,0px) + ${NAV_H+BTN_H}px)`}}>
         {/* 헤더 */}
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-          <button onClick={onBack}
+          <button onClick={onBack} aria-label="뒤로 가기"
             className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700 active:bg-gray-200 transition flex-shrink-0">
             <IconBack />
           </button>
@@ -2150,7 +2151,7 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
   if (hist.length === 0) return (
     <div>
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+        <button onClick={onBack} aria-label="뒤로 가기" className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         <p className="text-base font-bold text-gray-900">가격기록</p>
@@ -2163,7 +2164,7 @@ const PriceHistoryScreen = ({ onBack, onScrollToProducts, onProduct, showToast }
     <div className="bg-[#F7F7F8] min-h-screen">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+        <button onClick={onBack} aria-label="뒤로 가기" className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         <p className="text-base font-bold text-gray-900">쇼핑 성과</p>
@@ -2261,7 +2262,7 @@ const LocalAlertsScreen = ({ onBack, onGoHome, showToast }) => {
   return (
     <div>
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+        <button onClick={onBack} aria-label="뒤로 가기" className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         <p className="text-base font-bold text-gray-900">가격기록</p>
@@ -2311,7 +2312,7 @@ const LocalWishlistScreen = ({ onBack, onGoHome, onProduct, showToast }) => {
   return (
     <div>
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
+        <button onClick={onBack} aria-label="뒤로 가기" className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </button>
         <p className="text-base font-bold text-gray-900">찜한상품</p>
@@ -2973,7 +2974,7 @@ const HowToUseScreen = ({ onBack }) => {
     <div className="min-h-screen bg-[#F7F7F8]">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-100">
-        <button onClick={onBack}
+        <button onClick={onBack} aria-label="뒤로 가기"
           className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-gray-700 active:bg-gray-200 transition flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -3384,15 +3385,16 @@ export default function App() {
 
           {/* 헤더 */}
           <header className="sticky top-0 z-20 bg-white/96 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
-            <button onClick={()=>{goTo("home");setActiveNav("home");}} className="flex items-center gap-2">
+            <button onClick={()=>{goTo("home");setActiveNav("home");}} aria-label="AliTrack 홈으로 이동" className="flex items-center gap-2">
               <span className="text-xl">🛒</span>
               <span className="text-base font-extrabold text-gray-900 tracking-tight">AliTrack</span>
               <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full">BETA</span>
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={()=>setShowNotifSettings(true)}
+              <button onClick={()=>setShowNotifSettings(true)} aria-label="알림 설정"
                 className="w-8 h-8 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-sm active:bg-gray-200 transition">🔔</button>
               <button onClick={()=>{ if(user){ goTo("mypage"); setActiveNav("mypage"); } else showLogin(); }}
+                aria-label={user ? "마이페이지" : "로그인"}
                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition ${user?"bg-blue-50 active:bg-blue-100":"bg-[#F7F7F8] active:bg-gray-200"}`}>👤</button>
             </div>
           </header>
@@ -3409,6 +3411,8 @@ export default function App() {
             <div className="w-full max-w-[600px] flex border-t border-gray-100">
               {NAV_ITEMS_FULL.map(n=>(
                 <button key={n.id} onClick={()=>handleNav(n.id)}
+                  aria-label={n.label}
+                  aria-current={activeNav===n.id ? "page" : undefined}
                   className={`flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors ${activeNav===n.id?"text-orange-500":"text-gray-400"}`}>
                   <span className="text-xl leading-none">{n.icon}</span>
                   <span className="text-[10px] font-semibold">{n.label}</span>
