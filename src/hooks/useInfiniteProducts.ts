@@ -49,6 +49,8 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
           if (pageNum === 1 && !initializedRef.current) {
             return generateDummyPage(1).then(dummyItems => {
               setItems(dummyItems);
+              hasMoreRef.current = false;
+              setHasMore(false);
               pageRef.current = 1;
               setPage(1);
             });
@@ -69,12 +71,13 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       .catch((e: Error) => {
         clearTimeout(timeout);
         if (pageNum === 1 && !initializedRef.current) {
-          generateDummyPage(1).then(dummyItems => {
+          return generateDummyPage(1).then(dummyItems => {
             setItems(dummyItems);
+            hasMoreRef.current = false;
+            setHasMore(false);
             pageRef.current = 1;
             setPage(1);
           });
-          return;
         }
         setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
       })

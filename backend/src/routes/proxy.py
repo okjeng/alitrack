@@ -125,13 +125,14 @@ async def get_products(
             resp.raise_for_status()
             data = resp.json()
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="알리 서버 응답 시간이 초과되었습니다.")
+        logger.warning("알리 API 응답 타임아웃 — 빈 배열 반환")
+        return {"products": [], "page": page, "size": size, "total": 0}
     except httpx.HTTPStatusError as e:
-        logger.error(f"알리 API HTTP 오류: {e.response.status_code}")
-        raise HTTPException(status_code=502, detail="외부 서비스 오류가 발생했습니다.")
+        logger.error(f"알리 API HTTP 오류: {e.response.status_code} — 빈 배열 반환")
+        return {"products": [], "page": page, "size": size, "total": 0}
     except Exception as e:
         logger.error(f"프록시 오류: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="서버 오류가 발생했습니다.")
+        return {"products": [], "page": page, "size": size, "total": 0}
 
     if "error_response" in data:
         err = data["error_response"]
