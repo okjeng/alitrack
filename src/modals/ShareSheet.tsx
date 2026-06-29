@@ -8,7 +8,7 @@ interface ShareSheetProps {
 }
 
 export const ShareSheet = ({ product, onClose, showToast }: ShareSheetProps) => {
-  const url = `https://alitrack.kr/p/${product.id}`;
+  const url = `https://alitrack.kr/?p=${product.id}`;
 
   const shareNative = async () => {
     if (navigator.share) {

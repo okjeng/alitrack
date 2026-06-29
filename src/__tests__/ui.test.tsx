@@ -30,7 +30,7 @@ window.IntersectionObserver = vi.fn(() => ({
 })) as unknown as typeof IntersectionObserver;
 
 // fetch mock (API 호출 차단)
-global.fetch = vi.fn().mockResolvedValue({
+globalThis.fetch = vi.fn().mockResolvedValue({
   ok: true,
   json: async () => ({ products: [] }),
 } as Response);
@@ -213,7 +213,7 @@ import { InfiniteProductGrid } from "../components/InfiniteProductGrid";
 
 describe("InfiniteProductGrid", () => {
   beforeEach(() => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network Error"));
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network Error"));
   });
 
   it("API 실패 시 오류 메시지와 재시도 버튼을 렌더링한다", async () => {
@@ -227,10 +227,10 @@ describe("InfiniteProductGrid", () => {
   it("재시도 버튼 클릭 시 fetch가 다시 호출된다", async () => {
     render(<InfiniteProductGrid onProduct={vi.fn()} />);
     await waitFor(() => screen.getByText("다시 시도"), { timeout: 3000 });
-    const retryCount = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+    const retryCount = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
     fireEvent.click(screen.getByText("다시 시도"));
     await waitFor(() => {
-      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(retryCount);
+      expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(retryCount);
     }, { timeout: 3000 });
   });
 });

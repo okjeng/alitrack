@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Product } from "../types";
+import type { Product, WishlistItem } from "../types";
 import { getLocalWishlist, toggleLocalWish, fmt } from "../utils";
 import { IconBack } from "../components/ui/index";
 import { EmptyWishlist } from "../components/EmptyStates";
@@ -11,11 +11,17 @@ interface LocalWishlistScreenProps {
   showToast: (msg: string) => void;
 }
 
-export const LocalWishlistScreen = ({ onBack, onGoHome: _onGoHome, onProduct, showToast }: LocalWishlistScreenProps) => {
-  const [wish, setWish] = useState<Product[]>(getLocalWishlist);
+const toProduct = (w: WishlistItem): Product => ({
+  id: w.id, name: w.name, shortName: w.name, price: w.price,
+  orig: w.orig ?? Math.round(w.price * 1.3), discount: 0,
+  image: w.image_url, tag: "", deliveryDays: 0, rating: 0, reviews: 0,
+});
 
-  const remove = (product: Product) => {
-    toggleLocalWish(product);
+export const LocalWishlistScreen = ({ onBack, onGoHome: _onGoHome, onProduct, showToast }: LocalWishlistScreenProps) => {
+  const [wish, setWish] = useState<WishlistItem[]>(getLocalWishlist);
+
+  const remove = (item: WishlistItem) => {
+    toggleLocalWish(toProduct(item));
     setWish(getLocalWishlist());
     showToast("관심상품에서 제거했어요");
   };
@@ -37,9 +43,9 @@ export const LocalWishlistScreen = ({ onBack, onGoHome: _onGoHome, onProduct, sh
         <div className="px-4 py-4 space-y-3">
           {wish.map(p => (
             <div key={p.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex shadow-sm">
-              <button onClick={() => onProduct(p)} className="flex-1 flex items-center gap-3 px-4 py-3 text-left">
-                {p.image ? (
-                  <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-50" />
+              <button onClick={() => onProduct(toProduct(p))} className="flex-1 flex items-center gap-3 px-4 py-3 text-left">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-gray-50" />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🛍️</div>
                 )}

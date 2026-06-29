@@ -1,14 +1,11 @@
 import { useState, useMemo } from "react";
-import type { Product } from "../types";
+import type { Product, HistoryItem, PricePoint } from "../types";
 import { getPriceHistory, generateHistory, idToSeed, getLocalAlerts, removeLocalAlert, fmt } from "../utils";
 import { API_BASE } from "../data/constants";
 import { IconBack } from "../components/ui/index";
 import { PriceHistoryItem, BollingerSavingsChart } from "../components/PriceHistoryItem";
 import { EmptyPriceHistory } from "../components/EmptyStates";
 import { AlertModal } from "../modals/AlertModal";
-import type { PricePoint } from "../types";
-
-interface HistoryItem extends Product { timestamp?: number; productId?: string; }
 
 interface PriceHistoryScreenProps {
   onBack: () => void;
@@ -22,12 +19,12 @@ export const PriceHistoryScreen = ({ onBack, onScrollToProducts: _onScrollToProd
 
   const sorted = useMemo(() => {
     return [...raw].sort((a, b) => {
-      const lowA = Math.min(...generateHistory(a.price, idToSeed(String((a as HistoryItem).productId))).map((d: PricePoint) => d.price));
-      const lowB = Math.min(...generateHistory(b.price, idToSeed(String((b as HistoryItem).productId))).map((d: PricePoint) => d.price));
+      const lowA = Math.min(...generateHistory(a.price, idToSeed(String(a.productId))).map((d: PricePoint) => d.price));
+      const lowB = Math.min(...generateHistory(b.price, idToSeed(String(b.productId))).map((d: PricePoint) => d.price));
       return (a.price - lowA) - (b.price - lowB);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [raw.map(r => (r as HistoryItem).productId).join(",")]);
+  }, [raw.map(r => r.productId).join(",")]);
 
   const [hist, setHist]         = useState(sorted);
   const [alertModal, setAlertModal] = useState<HistoryItem | null>(null);
@@ -42,7 +39,7 @@ export const PriceHistoryScreen = ({ onBack, onScrollToProducts: _onScrollToProd
   const savingsLine = useMemo(() => {
     let cum = 0;
     return [...hist]
-      .sort((a, b) => ((a as HistoryItem).timestamp || 0) - ((b as HistoryItem).timestamp || 0))
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
       .map(item => {
         const orig = item.orig || Math.round(item.price * 1.4);
         cum += Math.max(0, orig - item.price);
@@ -136,7 +133,7 @@ export const PriceHistoryScreen = ({ onBack, onScrollToProducts: _onScrollToProd
 
       <div className="px-4 pt-2 pb-6 space-y-2">
         {hist.map(item => (
-          <PriceHistoryItem key={(item as HistoryItem).productId || item.id} item={item} onDetail={onProduct} />
+          <PriceHistoryItem key={item.productId || item.id} item={item} onDetail={onProduct} />
         ))}
         <p className="text-[10px] text-gray-400 text-center pt-2">역대 최저가 근접 순 정렬 · 최대 50개 보관</p>
       </div>

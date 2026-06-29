@@ -56,15 +56,20 @@ export default function App() {
   const scrollPositions = useRef<Record<string, number>>({});
   const mainRef         = useRef<HTMLDivElement | null>(null);
 
-  // 딥링크: /p/{id} → 상품 상세
+  // 딥링크: /p/{id} 또는 /?p={id} → 상품 상세
   useEffect(() => {
-    const match = window.location.pathname.match(/^\/p\/(\d+)$/);
-    if (!match) return;
-    fetch(`${API_BASE}/api/ali/product/${match[1]}`)
+    const pathMatch = window.location.pathname.match(/^\/p\/(\w+)$/);
+    const queryId   = new URLSearchParams(window.location.search).get("p");
+    const productId = pathMatch?.[1] ?? queryId;
+    if (!productId) return;
+    window.history.replaceState({ screen: "home" }, "", "/");
+    fetch(`${API_BASE}/api/ali/product/${productId}`)
       .then(r => r.ok ? r.json() : null)
-      .then((data: Record<string, unknown> | null) => { if (data?.id) { setSelProduct(mapProduct(data)); setScreen("detail"); } })
-      .catch(() => {});
-    window.history.replaceState({}, "", "/");
+      .then((data: Record<string, unknown> | null) => {
+        if (data?.id) { setSelProduct(mapProduct(data)); setScreen("detail"); }
+        else showToast("상품 정보를 찾을 수 없어요.");
+      })
+      .catch(() => showToast("상품을 불러오지 못했어요."));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
@@ -182,17 +187,20 @@ export default function App() {
 
   const handleNav = useCallback((id: string) => { setActiveNav(id); goTo(id); }, [goTo]);
 
+  // 초기 히스토리 엔트리에 screen 상태 기록
   useEffect(() => {
-    const onPop = () => setScreen(prev => {
-      const next = ["detail","feed","privacy","terms","howto"].includes(prev)
-        ? prev === "detail" ? (selCat ? "feed" : "home") : "home"
-        : "home";
-      restoreScroll(next);
-      return next;
-    });
+    window.history.replaceState({ screen: "home" }, "");
+  }, []);
+
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const target: string = (e.state as { screen?: string } | null)?.screen ?? "home";
+      restoreScroll(target);
+      setScreen(target);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [restoreScroll, selCat]);
+  }, [restoreScroll]);
 
   const handleCookieAccept = () => {
     try { localStorage.setItem("alitrack_cookie_consent", "all"); } catch {}
@@ -256,7 +264,7 @@ export default function App() {
       case "howto":    return <HowToUseScreen onBack={goBack}/>;
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
-      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
+      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast} onInstall={handlePwaInstall} showInstallBanner={showInstallBanner} onDismissInstall={dismissInstallBanner}/>;
     }
   };
 

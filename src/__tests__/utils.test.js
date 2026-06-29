@@ -85,10 +85,12 @@ describe("rankBySearch", () => {
     const result = rankBySearch([{ name: "에어텐트" }, { name: "에어텐트 캠핑용" }], "에어텐트");
     expect(result[0].name).toBe("에어텐트");
   });
-  it("keyword 포함 상품이 미포함 상품보다 앞에 온다", () => {
+  it("keyword 포함 상품만 결과에 포함된다 (무관 상품 필터링)", () => {
     const result = rankBySearch(items, "에어텐트");
     const names = result.map(i => i.name);
-    expect(names.indexOf("에어텐트 캠핑용")).toBeLessThan(names.indexOf("블루투스 이어폰"));
+    expect(names).toContain("에어텐트 캠핑용");
+    expect(names).not.toContain("블루투스 이어폰");
+    expect(names).not.toContain("Xiaomi 레드미 노트");
   });
   it("원본 배열을 변경하지 않는다 (불변성)", () => {
     const original = [...items];

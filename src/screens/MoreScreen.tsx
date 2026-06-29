@@ -20,7 +20,7 @@ export const MoreScreen = ({ onFeedback: _onFeedback, onPrivacy, onTerms, onHowT
   const [showNotif, setShowNotif]     = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
-  const savings = getLocalWishlist().reduce((acc, p) => acc + ((p.orig || 0) - (p.price || 0)), 0);
+  const savings = getLocalWishlist().reduce((acc, p) => acc + Math.max(0, (p.orig ?? Math.round(p.price * 1.3)) - p.price), 0);
 
   const clearCache = () => {
     try {

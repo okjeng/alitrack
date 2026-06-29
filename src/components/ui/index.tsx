@@ -1,5 +1,3 @@
-import type { TooltipProps } from "recharts";
-
 export const IconBack = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -51,7 +49,8 @@ export const LegalFooter = () => (
   </div>
 );
 
-export const ChartTip = ({ active, payload, label }: TooltipProps<number, string>) => {
+interface ChartTipProps { active?: boolean; payload?: Array<{ value?: number }>; label?: string; }
+export const ChartTip = ({ active, payload, label }: ChartTipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-xl shadow-lg">

@@ -27,6 +27,7 @@ interface AlertModalProps {
   user: User | null;
   onClose: () => void;
   showToast: (msg: string) => void;
+  showLogin?: () => void;
 }
 
 export const AlertModal = ({ product, user: _user, onClose, showToast }: AlertModalProps) => {

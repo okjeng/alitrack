@@ -42,3 +42,16 @@ export interface Category {
   keyword: string;
   sort: string;
 }
+
+export interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+  orig?: number;
+}
+
+export interface HistoryItem extends Product {
+  timestamp?: number;
+  productId?: string;
+}

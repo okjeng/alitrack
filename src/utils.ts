@@ -1,7 +1,7 @@
 // AliTrack 순수 유틸리티 함수 모음
 // 모든 함수는 React에 의존하지 않는 순수 함수로 단위 테스트 가능
 
-import type { Product, LocalAlert, PricePoint } from "./types";
+import type { Product, LocalAlert, PricePoint, WishlistItem, HistoryItem } from "./types";
 
 export const ALI_TRACKING_ID = "alitrack_kr";
 
@@ -32,7 +32,7 @@ export const mapProduct = (p: Record<string, unknown>): Product => {
     discount:     disc,
     image:        (p.image as string) || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
     tag,
-    deliveryDays: (p.delivery_days as number) || 5,
+    deliveryDays: (p.delivery_days as number) || 0,
     rating:       (p.rating as number) || 0,
     reviews:      (p.reviews as number) || 0,
     affiliate_url: (p.affiliate_url as string) || "",
@@ -73,19 +73,23 @@ export const generateHistory = (current: number, seed: number): PricePoint[] => 
 };
 
 // ─── 검색 랭킹 ───────────────────────────────────────────────────
-export const rankBySearch = (items: Array<{ name: string }>, keyword: string): Array<{ name: string }> => {
+export const rankBySearch = (
+  items: Array<{ name: string; shortName?: string; tag?: string }>,
+  keyword: string,
+): Array<{ name: string; shortName?: string; tag?: string }> => {
   if (!keyword) return items;
   const kw = keyword.toLowerCase().trim();
   const words = kw.split(/\s+/).filter(Boolean);
-  const score = (name: string): number => {
-    const n = (name || "").toLowerCase();
-    if (n === kw) return 4;
-    if (n.startsWith(kw)) return 3;
-    if (n.includes(kw)) return 2;
-    const hits = words.filter(w => n.includes(w)).length;
+  const score = (item: { name: string; shortName?: string; tag?: string }): number => {
+    if (item.name.toLowerCase() === kw) return 4;
+    const text = [item.name, item.shortName, item.tag].filter(Boolean).join(" ").toLowerCase();
+    if (text.includes(kw)) return text.startsWith(kw) ? 3 : 2;
+    const hits = words.filter(w => text.includes(w)).length;
     return hits > 0 ? hits / words.length : 0;
   };
-  return [...items].sort((a, b) => score(b.name) - score(a.name));
+  return [...items]
+    .filter(item => score(item) > 0)
+    .sort((a, b) => score(b) - score(a));
 };
 
 // ─── localStorage 헬퍼 ───────────────────────────────────────────
@@ -118,7 +122,7 @@ export const removeLocalAlert = (productId: string): void => {
   } catch {}
 };
 
-export const getLocalWishlist = (): Array<{ id: string; name: string; price: number; image_url: string }> => {
+export const getLocalWishlist = (): WishlistItem[] => {
   try { return JSON.parse(localStorage.getItem("alitrack_wishlist") || "[]"); } catch { return []; }
 };
 export const toggleLocalWish = (product: Product): boolean => {
@@ -132,7 +136,7 @@ export const toggleLocalWish = (product: Product): boolean => {
   } catch { return false; }
 };
 
-export const getPriceHistory = (): Array<Record<string, unknown>> => {
+export const getPriceHistory = (): HistoryItem[] => {
   try { return JSON.parse(localStorage.getItem("alitrack_price_history") || "[]"); } catch { return []; }
 };
 export const savePriceHistory = (product: Product): void => {
@@ -142,9 +146,15 @@ export const savePriceHistory = (product: Product): void => {
       productId:     String(product.id),
       id:            product.id,
       name:          product.name || "",
+      shortName:     product.shortName || "",
       image:         product.image || "",
       price:         product.price || 0,
       orig:          product.orig || product.price || 0,
+      discount:      product.discount || 0,
+      tag:           product.tag || "",
+      deliveryDays:  product.deliveryDays || 0,
+      rating:        product.rating || 0,
+      reviews:       product.reviews || 0,
       affiliate_url: product.affiliate_url || "",
       timestamp:     Date.now(),
     });
