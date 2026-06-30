@@ -1,4 +1,4 @@
-const CACHE = "alitrack-v9";
+const CACHE = "alitrack-v10";
 const PRECACHE = ["/", "/index.html"];
 
 self.addEventListener("install", e =>
@@ -18,6 +18,14 @@ self.addEventListener("fetch", e => {
   if (e.request.url.includes("/api/")) return;
   const url = new URL(e.request.url);
   if (url.pathname === "/sw.js" || url.pathname === "/" || url.pathname === "/index.html") {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
+  const isExternalImage =
+    url.hostname.includes("alicdn.com") ||
+    url.hostname.includes("aliexpress-media.com") ||
+    url.hostname.includes("aliexpress.com");
+  if (isExternalImage) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
