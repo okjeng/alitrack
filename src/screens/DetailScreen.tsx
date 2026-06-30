@@ -8,6 +8,7 @@ import { WeeklyPatternCard } from "../components/charts/WeeklyPatternCard";
 import { NextSaleCountdown } from "../components/charts/NextSaleCountdown";
 import { PriceTimeline } from "../components/charts/PriceTimeline";
 import { SellerCompareCard } from "../components/charts/SellerCompareCard";
+import { CoupangCompareCard } from "../components/charts/CoupangCompareCard";
 import { ShareSheet } from "../modals/ShareSheet";
 import { AlertModal } from "../modals/AlertModal";
 
@@ -126,6 +127,7 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
           <NextSaleCountdown currentPrice={product.price} />
           <PriceTimeline hist={hist} currentPrice={product.price} />
           <SellerCompareCard product={product} />
+          <CoupangCompareCard productName={product.name} currentPrice={product.price} />
           <LegalFooter />
         </div>
       </div>
