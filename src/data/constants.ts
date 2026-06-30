@@ -2,6 +2,9 @@ import type { Category, Product } from "../types";
 
 export const PAGE_SIZE = 20;
 
+// 외부 서비스 의존 없는 인라인 SVG 폴백 이미지
+export const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Crect width='320' height='320' fill='%23EEF2FF'/%3E%3Crect x='115' y='95' width='90' height='65' rx='6' fill='%236366F1' opacity='.2'/%3E%3Crect x='95' y='155' width='130' height='80' rx='6' fill='%236366F1' opacity='.15'/%3E%3Cpath d='M115 155 L95 155 M205 155 L225 155' stroke='%236366F1' stroke-width='2' opacity='.3'/%3E%3C/svg%3E";
+
 export const API_BASE: string = import.meta.env.VITE_API_BASE_URL || "https://alitrack-production.up.railway.app";
 
 export const NAV_H = 56;
@@ -23,26 +26,26 @@ interface ProductTemplate {
 }
 
 export const PRODUCT_TEMPLATES: ProductTemplate[] = [
-  { namePrefix:"Xiaomi 레드미 노트",    shortPrefix:"레드미 노트",      basePrice:189000, image:"https://placehold.co/320x320/EEF2FF/6366F1?text=📱", tag:"역대최저",   deliveryDays:5, rating:4.8 },
-  { namePrefix:"UGREEN GaN 충전기",     shortPrefix:"GaN 충전기",       basePrice:28500,  image:"https://placehold.co/320x320/FFF7ED/F97316?text=⚡", tag:"핫딜",       deliveryDays:4, rating:4.7 },
-  { namePrefix:"Anker Soundcore",       shortPrefix:"Soundcore",        basePrice:45900,  image:"https://placehold.co/320x320/F0FDF4/22C55E?text=🎧", tag:"최저가근접", deliveryDays:5, rating:4.6 },
-  { namePrefix:"Baseus 맥세이프",       shortPrefix:"맥세이프 거치대",  basePrice:12800,  image:"https://placehold.co/320x320/FFF1F2/FB7185?text=📲", tag:"긴급핫딜",   deliveryDays:3, rating:4.5 },
-  { namePrefix:"Haylou GT 이어폰",      shortPrefix:"Haylou GT",        basePrice:4800,   image:"https://placehold.co/320x320/F0F9FF/38BDF8?text=🎵", tag:"특가",       deliveryDays:5, rating:4.4 },
-  { namePrefix:"Xiaomi 스마트워치",     shortPrefix:"샤오미 워치",      basePrice:62000,  image:"https://placehold.co/320x320/FDF4FF/C084FC?text=⌚", tag:"역대최저",   deliveryDays:5, rating:4.7 },
-  { namePrefix:"Toocki GaN 미니 충전기",shortPrefix:"Toocki 충전기",    basePrice:3900,   image:"https://placehold.co/320x320/FFFBEB/FCD34D?text=🔌", tag:"핫딜",       deliveryDays:4, rating:4.5 },
-  { namePrefix:"ELEGOO RGB 무드등",     shortPrefix:"RGB 무드등",       basePrice:8900,   image:"https://placehold.co/320x320/ECFDF5/34D399?text=💡", tag:"최저가근접", deliveryDays:5, rating:4.3 },
-  { namePrefix:"Joyroom 케이블 세트",   shortPrefix:"케이블 세트",      basePrice:7500,   image:"https://placehold.co/320x320/EFF6FF/60A5FA?text=🔌", tag:"특가",       deliveryDays:3, rating:4.6 },
-  { namePrefix:"Baseus 무선충전 패드",  shortPrefix:"무선충전 패드",    basePrice:4500,   image:"https://placehold.co/320x320/FFF1F2/F43F5E?text=⚡", tag:"긴급핫딜",   deliveryDays:5, rating:4.4 },
-  { namePrefix:"Xiaomi 공기청정기",     shortPrefix:"샤오미 공기청정기",basePrice:89000,  image:"https://placehold.co/320x320/F0FDF4/4ADE80?text=🌀", tag:"역대최저",   deliveryDays:5, rating:4.8 },
-  { namePrefix:"LED 마스크팩 기기",     shortPrefix:"LED 마스크팩",     basePrice:32000,  image:"https://placehold.co/320x320/FFF7ED/FB923C?text=💄", tag:"핫딜",       deliveryDays:4, rating:4.5 },
-  { namePrefix:"HAGIBIS USB-C 허브",    shortPrefix:"USB-C 허브",       basePrice:24900,  image:"https://placehold.co/320x320/F0F0FF/818CF8?text=🔌", tag:"특가",       deliveryDays:5, rating:4.6 },
-  { namePrefix:"Baseus 보조배터리",     shortPrefix:"보조배터리",       basePrice:28900,  image:"https://placehold.co/320x320/FFF8F0/FB923C?text=🔋", tag:"역대최저",   deliveryDays:3, rating:4.7 },
-  { namePrefix:"Xiaomi 게이밍 마우스",  shortPrefix:"게이밍 마우스",    basePrice:16500,  image:"https://placehold.co/320x320/F0FFF8/34D399?text=🖱", tag:"핫딜",       deliveryDays:5, rating:4.4 },
-  { namePrefix:"UGREEN 노트북 거치대",  shortPrefix:"노트북 거치대",    basePrice:19900,  image:"https://placehold.co/320x320/F8F0FF/C084FC?text=💻", tag:"최저가근접", deliveryDays:4, rating:4.5 },
-  { namePrefix:"샤오미 스마트 플러그",  shortPrefix:"스마트 플러그",    basePrice:8500,   image:"https://placehold.co/320x320/ECFDF5/10B981?text=🔌", tag:"특가",       deliveryDays:5, rating:4.3 },
-  { namePrefix:"Anker 마그네틱 케이블", shortPrefix:"마그네틱 케이블",  basePrice:12000,  image:"https://placehold.co/320x320/EFF6FF/3B82F6?text=🔌", tag:"핫딜",       deliveryDays:4, rating:4.6 },
-  { namePrefix:"JMGO 미니 빔프로젝터",  shortPrefix:"미니 빔프로젝터",  basePrice:145000, image:"https://placehold.co/320x320/FDF4FF/A855F7?text=📽", tag:"역대최저",   deliveryDays:5, rating:4.7 },
-  { namePrefix:"Dreame 무선 청소기",    shortPrefix:"무선 청소기",      basePrice:178000, image:"https://placehold.co/320x320/F0FDF4/22C55E?text=🌀", tag:"긴급핫딜",   deliveryDays:5, rating:4.8 },
+  { namePrefix:"Xiaomi 레드미 노트",    shortPrefix:"레드미 노트",      basePrice:189000, image:"https://placehold.co/320x320/EEF2FF/6366F1?text=Phone",     tag:"역대최저",   deliveryDays:5, rating:4.8 },
+  { namePrefix:"UGREEN GaN 충전기",     shortPrefix:"GaN 충전기",       basePrice:28500,  image:"https://placehold.co/320x320/FFF7ED/F97316?text=Charger",   tag:"핫딜",       deliveryDays:4, rating:4.7 },
+  { namePrefix:"Anker Soundcore",       shortPrefix:"Soundcore",        basePrice:45900,  image:"https://placehold.co/320x320/F0FDF4/22C55E?text=Speaker",   tag:"최저가근접", deliveryDays:5, rating:4.6 },
+  { namePrefix:"Baseus 맥세이프",       shortPrefix:"맥세이프 거치대",  basePrice:12800,  image:"https://placehold.co/320x320/FFF1F2/FB7185?text=Mount",     tag:"긴급핫딜",   deliveryDays:3, rating:4.5 },
+  { namePrefix:"Haylou GT 이어폰",      shortPrefix:"Haylou GT",        basePrice:4800,   image:"https://placehold.co/320x320/F0F9FF/38BDF8?text=Earbuds",   tag:"특가",       deliveryDays:5, rating:4.4 },
+  { namePrefix:"Xiaomi 스마트워치",     shortPrefix:"샤오미 워치",      basePrice:62000,  image:"https://placehold.co/320x320/FDF4FF/C084FC?text=Watch",     tag:"역대최저",   deliveryDays:5, rating:4.7 },
+  { namePrefix:"Toocki GaN 미니 충전기",shortPrefix:"Toocki 충전기",    basePrice:3900,   image:"https://placehold.co/320x320/FFFBEB/FCD34D?text=Plug",      tag:"핫딜",       deliveryDays:4, rating:4.5 },
+  { namePrefix:"ELEGOO RGB 무드등",     shortPrefix:"RGB 무드등",       basePrice:8900,   image:"https://placehold.co/320x320/ECFDF5/34D399?text=Light",     tag:"최저가근접", deliveryDays:5, rating:4.3 },
+  { namePrefix:"Joyroom 케이블 세트",   shortPrefix:"케이블 세트",      basePrice:7500,   image:"https://placehold.co/320x320/EFF6FF/60A5FA?text=Cable",     tag:"특가",       deliveryDays:3, rating:4.6 },
+  { namePrefix:"Baseus 무선충전 패드",  shortPrefix:"무선충전 패드",    basePrice:4500,   image:"https://placehold.co/320x320/FFF1F2/F43F5E?text=Pad",       tag:"긴급핫딜",   deliveryDays:5, rating:4.4 },
+  { namePrefix:"Xiaomi 공기청정기",     shortPrefix:"샤오미 공기청정기",basePrice:89000,  image:"https://placehold.co/320x320/F0FDF4/4ADE80?text=Purifier",  tag:"역대최저",   deliveryDays:5, rating:4.8 },
+  { namePrefix:"LED 마스크팩 기기",     shortPrefix:"LED 마스크팩",     basePrice:32000,  image:"https://placehold.co/320x320/FFF7ED/FB923C?text=Beauty",    tag:"핫딜",       deliveryDays:4, rating:4.5 },
+  { namePrefix:"HAGIBIS USB-C 허브",    shortPrefix:"USB-C 허브",       basePrice:24900,  image:"https://placehold.co/320x320/F0F0FF/818CF8?text=Hub",       tag:"특가",       deliveryDays:5, rating:4.6 },
+  { namePrefix:"Baseus 보조배터리",     shortPrefix:"보조배터리",       basePrice:28900,  image:"https://placehold.co/320x320/FFF8F0/FB923C?text=Battery",   tag:"역대최저",   deliveryDays:3, rating:4.7 },
+  { namePrefix:"Xiaomi 게이밍 마우스",  shortPrefix:"게이밍 마우스",    basePrice:16500,  image:"https://placehold.co/320x320/F0FFF8/34D399?text=Mouse",     tag:"핫딜",       deliveryDays:5, rating:4.4 },
+  { namePrefix:"UGREEN 노트북 거치대",  shortPrefix:"노트북 거치대",    basePrice:19900,  image:"https://placehold.co/320x320/F8F0FF/C084FC?text=Stand",     tag:"최저가근접", deliveryDays:4, rating:4.5 },
+  { namePrefix:"샤오미 스마트 플러그",  shortPrefix:"스마트 플러그",    basePrice:8500,   image:"https://placehold.co/320x320/ECFDF5/10B981?text=SmartPlug", tag:"특가",       deliveryDays:5, rating:4.3 },
+  { namePrefix:"Anker 마그네틱 케이블", shortPrefix:"마그네틱 케이블",  basePrice:12000,  image:"https://placehold.co/320x320/EFF6FF/3B82F6?text=MagCable",  tag:"핫딜",       deliveryDays:4, rating:4.6 },
+  { namePrefix:"JMGO 미니 빔프로젝터",  shortPrefix:"미니 빔프로젝터",  basePrice:145000, image:"https://placehold.co/320x320/FDF4FF/A855F7?text=Projector", tag:"역대최저",   deliveryDays:5, rating:4.7 },
+  { namePrefix:"Dreame 무선 청소기",    shortPrefix:"무선 청소기",      basePrice:178000, image:"https://placehold.co/320x320/F0FDF4/22C55E?text=Vacuum",    tag:"긴급핫딜",   deliveryDays:5, rating:4.8 },
 ];
 
 const daysFromNow = (days: number): string => {

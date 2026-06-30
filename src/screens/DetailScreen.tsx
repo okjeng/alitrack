@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import type { Product, User } from "../types";
 import { fmt, idToSeed, generateHistory, buildAffiliateUrl, toggleLocalWish, getLocalWishlist, getLocalAlerts, savePriceHistory, trackEvent } from "../utils";
-import { TAG_COLORS, NAV_H, BTN_H } from "../data/constants";
+import { TAG_COLORS, NAV_H, BTN_H, FALLBACK_IMAGE } from "../data/constants";
 import { IconBack, LegalFooter } from "../components/ui/index";
 import { PriceRangeChart } from "../components/charts/PriceRangeChart";
 import { WeeklyPatternCard } from "../components/charts/WeeklyPatternCard";
@@ -62,7 +62,7 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
         <div className="bg-[#F7F7F8]">
           <img src={product.image} alt={product.shortName} loading="lazy"
             className="w-full max-h-72 object-contain mx-auto"
-            onError={e => { e.currentTarget.src = "https://placehold.co/500x500/EEF2FF/6366F1?text=📦"; e.currentTarget.onerror = null; }} />
+            onError={e => { e.currentTarget.src = FALLBACK_IMAGE; e.currentTarget.onerror = null; }} />
         </div>
 
         <div className="px-4 pt-4 space-y-4">

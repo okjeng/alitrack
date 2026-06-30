@@ -2,6 +2,7 @@
 // 모든 함수는 React에 의존하지 않는 순수 함수로 단위 테스트 가능
 
 import type { Product, LocalAlert, PricePoint, WishlistItem, HistoryItem } from "./types";
+import { FALLBACK_IMAGE } from "./data/constants";
 
 export const ALI_TRACKING_ID = "alitrack_kr";
 
@@ -32,7 +33,7 @@ export const mapProduct = (p: Record<string, unknown>): Product => {
     price:        (p.price as number) || 0,
     orig:         (p.orig_price as number) || (p.price as number) || 0,
     discount:     disc,
-    image:        imgUrl || "https://placehold.co/320x320/EEF2FF/6366F1?text=📦",
+    image:        imgUrl || FALLBACK_IMAGE,
     tag,
     deliveryDays: (p.delivery_days as number) || 0,
     rating:       (p.rating as number) || 0,

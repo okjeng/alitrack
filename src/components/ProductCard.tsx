@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Product } from "../types";
 import { fmt, avg60, idToSeed, generateHistory } from "../utils";
-import { TAG_COLORS } from "../data/constants";
+import { TAG_COLORS, FALLBACK_IMAGE } from "../data/constants";
 
 interface ProductCardProps {
   product: Product;
@@ -19,7 +19,7 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
       <div className="relative bg-gray-100">
         <img src={p.image} alt={p.shortName} loading="lazy"
           className="w-full aspect-square object-cover"
-          onError={e => { e.currentTarget.src = "https://placehold.co/320x320/EEF2FF/6366F1?text=%F0%9F%93%A6"; e.currentTarget.onerror = null; }} />
+          onError={e => { e.currentTarget.src = FALLBACK_IMAGE; e.currentTarget.onerror = null; }} />
         <span className={`absolute top-2 left-2 text-[9px] font-extrabold text-white px-1.5 py-0.5 rounded-full ${TAG_COLORS[p.tag]||"bg-gray-500"}`}>
           {p.tag}
         </span>
