@@ -14,6 +14,7 @@ interface UseInfiniteProductsResult {
 }
 
 export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfiniteProductsResult => {
+  console.log("[5] useInfiniteProducts 호출됨, keyword =", JSON.stringify(keyword));
   const [items, setItems]             = useState<Product[]>([]);
   const [page, setPage]               = useState(0);
   const [loading, setLoading]         = useState(false);
@@ -36,6 +37,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: sortRef.current });
+    console.log("[6] fetchPage 실행, keywordRef.current =", JSON.stringify(keywordRef.current));
     if (keywordRef.current) params.set("keyword", keywordRef.current);
     fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal })
       .then(res => {
@@ -72,6 +74,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
 
   // keyword/sort 변경 시 초기화 후 재요청
   useEffect(() => {
+    console.log("[7] useEffect 실행, keyword(클로저) =", JSON.stringify(keyword), "keywordRef.current(before) =", JSON.stringify(keywordRef.current));
     setItems([]);
     setPage(0);
     setHasMore(true);
@@ -83,6 +86,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     loadingRef.current = false;
     keywordRef.current = keyword;
     sortRef.current    = sort;
+    console.log("[8] fetchPage(1) 직전, keywordRef.current =", JSON.stringify(keywordRef.current));
     fetchPage(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword, sort]);

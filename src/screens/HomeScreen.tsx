@@ -51,8 +51,10 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
 
   const handleSearch = () => {
     const q = searchQuery.trim();
+    console.log("[1] handleSearch 호출됨, q =", JSON.stringify(q));
     if (!q) return;
     setActiveSearch(q);
+    console.log("[2] setActiveSearch 호출됨, q =", JSON.stringify(q));
     trackEvent("search", { search_term: q });
   };
 
@@ -167,6 +169,7 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
                 <p className="text-sm font-bold text-gray-900">🔍 &ldquo;{activeSearch}&rdquo; 검색결과</p>
                 <button onClick={clearSearch} className="text-xs text-orange-500 font-semibold active:text-orange-600 transition">초기화</button>
               </div>
+              {console.log("[3] InfiniteProductGrid 렌더링, keyword =", JSON.stringify(activeSearch)) as unknown as null}
               <InfiniteProductGrid key={activeSearch} onProduct={onProduct} keyword={activeSearch} sort="default" rankKeyword={activeSearch} />
             </div>
           ) : (
