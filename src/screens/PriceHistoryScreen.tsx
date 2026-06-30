@@ -3,7 +3,7 @@ import type { Product, HistoryItem, PricePoint } from "../types";
 import { getPriceHistory, generateHistory, idToSeed, getLocalAlerts, removeLocalAlert, fmt } from "../utils";
 import { API_BASE } from "../data/constants";
 import { IconBack } from "../components/ui/index";
-import { PriceHistoryItem, BollingerSavingsChart } from "../components/PriceHistoryItem";
+import { PriceHistoryItem, SavingsLineChart } from "../components/PriceHistoryItem";
 import { EmptyPriceHistory } from "../components/EmptyStates";
 import { AlertModal } from "../modals/AlertModal";
 
@@ -115,12 +115,12 @@ export const PriceHistoryScreen = ({ onBack, onScrollToProducts: _onScrollToProd
             </div>
           </div>
           {savingsLine.length > 2 && (
-            <div className="mt-3" style={{ marginLeft:-8, marginRight:-8 }}>
-              <BollingerSavingsChart hist={savingsLine.map((p, i) => ({ price: p, date: String(i) }))} />
-              <div className="flex justify-end gap-3 px-2 mt-0.5 opacity-70">
+            <div className="mt-3 -mx-1">
+              <SavingsLineChart data={savingsLine} />
+              <div className="flex gap-4 mt-1 opacity-70">
                 <span className="text-[9px] text-white font-semibold">─ 실제</span>
-                <span className="text-[9px] text-white font-semibold opacity-70">─ 이동평균</span>
-                <span className="text-[9px] text-white font-semibold opacity-50">- - 밴드</span>
+                <span className="text-[9px] text-white font-semibold opacity-70">╌ 이동평균</span>
+                <span className="text-[9px] text-white font-semibold opacity-50">▫ 밴드</span>
               </div>
             </div>
           )}
