@@ -29,16 +29,16 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
   const sortRef        = useRef(sort);
   const initializedRef = useRef(false);
 
-  const fetchPage = (pageNum: number) => {
+  const fetchPage = (pageNum: number, kw = keywordRef.current, s = sortRef.current) => {
     if (loadingRef.current || !hasMoreRef.current) return;
     loadingRef.current = true;
     setLoading(true);
     setError(null);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: sortRef.current });
-    console.log("[6] fetchPage 실행, keywordRef.current =", JSON.stringify(keywordRef.current));
-    if (keywordRef.current) params.set("keyword", keywordRef.current);
+    const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: s });
+    console.log("[6] fetchPage 실행, kw =", JSON.stringify(kw));
+    if (kw) params.set("keyword", kw);
     fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal })
       .then(res => {
         clearTimeout(timeout);
@@ -86,8 +86,8 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     loadingRef.current = false;
     keywordRef.current = keyword;
     sortRef.current    = sort;
-    console.log("[8] fetchPage(1) 직전, keywordRef.current =", JSON.stringify(keywordRef.current));
-    fetchPage(1);
+    console.log("[8] fetchPage(1) 직전, keyword =", JSON.stringify(keyword));
+    fetchPage(1, keyword, sort);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword, sort]);
 
