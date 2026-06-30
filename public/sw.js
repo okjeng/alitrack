@@ -25,10 +25,7 @@ self.addEventListener("fetch", e => {
     url.hostname.includes("alicdn.com") ||
     url.hostname.includes("aliexpress-media.com") ||
     url.hostname.includes("aliexpress.com");
-  if (isExternalImage) {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-    return;
-  }
+  if (isExternalImage) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok) {
