@@ -1,4 +1,4 @@
-import type { Category, Product } from "../types";
+import type { Category } from "../types";
 
 export const PAGE_SIZE = 20;
 
@@ -14,39 +14,6 @@ export const TAG_COLORS: Record<string, string> = {
   역대최저: "bg-red-500", 핫딜: "bg-orange-500",
   최저가근접: "bg-blue-500", 긴급핫딜: "bg-pink-500", 특가: "bg-green-600",
 };
-
-interface ProductTemplate {
-  namePrefix: string;
-  shortPrefix: string;
-  basePrice: number;
-  image: string;
-  tag: string;
-  deliveryDays: number;
-  rating: number;
-}
-
-export const PRODUCT_TEMPLATES: ProductTemplate[] = [
-  { namePrefix:"Xiaomi 레드미 노트",    shortPrefix:"레드미 노트",      basePrice:189000, image:FALLBACK_IMAGE, tag:"역대최저",   deliveryDays:5, rating:4.8 },
-  { namePrefix:"UGREEN GaN 충전기",     shortPrefix:"GaN 충전기",       basePrice:28500,  image:FALLBACK_IMAGE, tag:"핫딜",       deliveryDays:4, rating:4.7 },
-  { namePrefix:"Anker Soundcore",       shortPrefix:"Soundcore",        basePrice:45900,  image:FALLBACK_IMAGE, tag:"최저가근접", deliveryDays:5, rating:4.6 },
-  { namePrefix:"Baseus 맥세이프",       shortPrefix:"맥세이프 거치대",  basePrice:12800,  image:FALLBACK_IMAGE, tag:"긴급핫딜",   deliveryDays:3, rating:4.5 },
-  { namePrefix:"Haylou GT 이어폰",      shortPrefix:"Haylou GT",        basePrice:4800,   image:FALLBACK_IMAGE, tag:"특가",       deliveryDays:5, rating:4.4 },
-  { namePrefix:"Xiaomi 스마트워치",     shortPrefix:"샤오미 워치",      basePrice:62000,  image:FALLBACK_IMAGE, tag:"역대최저",   deliveryDays:5, rating:4.7 },
-  { namePrefix:"Toocki GaN 미니 충전기",shortPrefix:"Toocki 충전기",    basePrice:3900,   image:FALLBACK_IMAGE, tag:"핫딜",       deliveryDays:4, rating:4.5 },
-  { namePrefix:"ELEGOO RGB 무드등",     shortPrefix:"RGB 무드등",       basePrice:8900,   image:FALLBACK_IMAGE, tag:"최저가근접", deliveryDays:5, rating:4.3 },
-  { namePrefix:"Joyroom 케이블 세트",   shortPrefix:"케이블 세트",      basePrice:7500,   image:FALLBACK_IMAGE, tag:"특가",       deliveryDays:3, rating:4.6 },
-  { namePrefix:"Baseus 무선충전 패드",  shortPrefix:"무선충전 패드",    basePrice:4500,   image:FALLBACK_IMAGE, tag:"긴급핫딜",   deliveryDays:5, rating:4.4 },
-  { namePrefix:"Xiaomi 공기청정기",     shortPrefix:"샤오미 공기청정기",basePrice:89000,  image:FALLBACK_IMAGE, tag:"역대최저",   deliveryDays:5, rating:4.8 },
-  { namePrefix:"LED 마스크팩 기기",     shortPrefix:"LED 마스크팩",     basePrice:32000,  image:FALLBACK_IMAGE, tag:"핫딜",       deliveryDays:4, rating:4.5 },
-  { namePrefix:"HAGIBIS USB-C 허브",    shortPrefix:"USB-C 허브",       basePrice:24900,  image:FALLBACK_IMAGE, tag:"특가",       deliveryDays:5, rating:4.6 },
-  { namePrefix:"Baseus 보조배터리",     shortPrefix:"보조배터리",       basePrice:28900,  image:FALLBACK_IMAGE, tag:"역대최저",   deliveryDays:3, rating:4.7 },
-  { namePrefix:"Xiaomi 게이밍 마우스",  shortPrefix:"게이밍 마우스",    basePrice:16500,  image:FALLBACK_IMAGE, tag:"핫딜",       deliveryDays:5, rating:4.4 },
-  { namePrefix:"UGREEN 노트북 거치대",  shortPrefix:"노트북 거치대",    basePrice:19900,  image:FALLBACK_IMAGE, tag:"최저가근접", deliveryDays:4, rating:4.5 },
-  { namePrefix:"샤오미 스마트 플러그",  shortPrefix:"스마트 플러그",    basePrice:8500,   image:FALLBACK_IMAGE, tag:"특가",       deliveryDays:5, rating:4.3 },
-  { namePrefix:"Anker 마그네틱 케이블", shortPrefix:"마그네틱 케이블",  basePrice:12000,  image:FALLBACK_IMAGE, tag:"핫딜",       deliveryDays:4, rating:4.6 },
-  { namePrefix:"JMGO 미니 빔프로젝터",  shortPrefix:"미니 빔프로젝터",  basePrice:145000, image:FALLBACK_IMAGE, tag:"역대최저",   deliveryDays:5, rating:4.7 },
-  { namePrefix:"Dreame 무선 청소기",    shortPrefix:"무선 청소기",      basePrice:178000, image:FALLBACK_IMAGE, tag:"긴급핫딜",   deliveryDays:5, rating:4.8 },
-];
 
 const daysFromNow = (days: number): string => {
   if (days === 0) return "오늘 자정 만료";
@@ -120,33 +87,3 @@ export const ONBOARDING_SLIDES: OnboardingSlide[] = [
 ];
 
 export const COUPANG_PARTNER_ID = "AF4860198";
-
-export const generateDummyPage = (page: number): Promise<Product[]> =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const items: Product[] = Array.from({ length: PAGE_SIZE }, (_, i) => {
-        const globalIdx = (page - 1) * PAGE_SIZE + i;
-        const tmpl = PRODUCT_TEMPLATES[globalIdx % PRODUCT_TEMPLATES.length];
-        const variation   = Math.floor(globalIdx / PRODUCT_TEMPLATES.length);
-        const priceVariant = Math.round((tmpl.basePrice * (0.85 + Math.random() * 0.3)) / 100) * 100;
-        const origVariant  = Math.round(priceVariant * (1.2 + Math.random() * 0.4) / 100) * 100;
-        const discount     = Math.round((1 - priceVariant / origVariant) * 100);
-        const reviewCount  = Math.floor(Math.random() * 5000) + 200;
-        const ratingVar    = +(tmpl.rating - 0.1 + Math.random() * 0.2).toFixed(1);
-        return {
-          id:          `p${String(globalIdx + 1).padStart(4,"0")}`,
-          name:        `${tmpl.namePrefix} ${variation > 0 ? `(${["Pro","Max","Ultra","Plus","Neo"][variation % 5]})` : ""}`.trim(),
-          shortName:   tmpl.shortPrefix,
-          price:       priceVariant,
-          orig:        origVariant,
-          discount,
-          image:       tmpl.image,
-          tag:         tmpl.tag,
-          deliveryDays:tmpl.deliveryDays,
-          rating:      Math.min(5.0, ratingVar),
-          reviews:     reviewCount,
-        };
-      });
-      resolve(items);
-    }, 600);
-  });

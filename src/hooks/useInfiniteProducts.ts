@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Product } from "../types";
 import { mapProduct } from "../utils";
-import { PAGE_SIZE, API_BASE, generateDummyPage } from "../data/constants";
+import { PAGE_SIZE, API_BASE } from "../data/constants";
 
 interface UseInfiniteProductsResult {
   items: Product[];
@@ -46,15 +46,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       .then((data: { products?: unknown[] }) => {
         const newItems: Product[] = (data.products || []).map(p => mapProduct(p as Record<string, unknown>));
         if (newItems.length === 0) {
-          if (pageNum === 1 && !initializedRef.current) {
-            return generateDummyPage(1).then(dummyItems => {
-              setItems(dummyItems);
-              hasMoreRef.current = false;
-              setHasMore(false);
-              pageRef.current = 1;
-              setPage(1);
-            });
-          }
           hasMoreRef.current = false;
           setHasMore(false);
         } else {
@@ -70,15 +61,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       })
       .catch((e: Error) => {
         clearTimeout(timeout);
-        if (pageNum === 1 && !initializedRef.current) {
-          return generateDummyPage(1).then(dummyItems => {
-            setItems(dummyItems);
-            hasMoreRef.current = false;
-            setHasMore(false);
-            pageRef.current = 1;
-            setPage(1);
-          });
-        }
         setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
       })
       .finally(() => {
@@ -88,12 +70,22 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       });
   };
 
-  // 최초 로드
+  // keyword/sort 변경 시 초기화 후 재요청
   useEffect(() => {
+    setItems([]);
+    setPage(0);
+    setHasMore(true);
+    setError(null);
+    setInitialized(false);
+    hasMoreRef.current = true;
+    pageRef.current = 0;
+    initializedRef.current = false;
+    loadingRef.current = false;
     keywordRef.current = keyword;
     sortRef.current    = sort;
     fetchPage(1);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyword, sort]);
 
   // 무한 스크롤
   useEffect(() => {
