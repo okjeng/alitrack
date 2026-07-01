@@ -55,8 +55,11 @@ def cache_response(ttl: int = 300):
                 content = result if isinstance(result, dict) else result.body
                 if isinstance(content, bytes):
                     content = json.loads(content)
-                await redis.setex(cache_key, ttl, json.dumps(content))
-                logger.debug(f"캐시 SET: {cache_key}, TTL={ttl}s")
+                if isinstance(content, dict) and "products" in content and not content["products"]:
+                    logger.debug(f"빈 결과 — 캐시 저장 스킵: {cache_key}")
+                else:
+                    await redis.setex(cache_key, ttl, json.dumps(content))
+                    logger.debug(f"캐시 SET: {cache_key}, TTL={ttl}s")
             except Exception as e:
                 logger.warning(f"캐시 저장 실패 (무시): {e}")
 
