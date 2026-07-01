@@ -287,7 +287,6 @@ export default function App() {
             <button onClick={() => { goTo("home"); setActiveNav("home"); }} aria-label="AliTrack 홈으로 이동" className="flex items-center gap-2">
               <span className="text-xl">🛒</span>
               <span className="text-base font-extrabold text-gray-900 tracking-tight">AliTrack</span>
-              <span className="text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full">BETA</span>
             </button>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowNotifSettings(true)} aria-label="알림 설정"
