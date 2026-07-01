@@ -18,6 +18,7 @@ const LoggedInMypage          = lazy(() => import("./components/MyPage").then(m 
 
 // 화면 — 라우터가 전환 시 lazy 로드
 const HomeScreen         = lazy(() => import("./screens/HomeScreen").then(m => ({ default: m.HomeScreen })));
+const SearchResultScreen = lazy(() => import("./screens/SearchResultScreen").then(m => ({ default: m.SearchResultScreen })));
 const CategoryFeedScreen = lazy(() => import("./screens/CategoryFeedScreen").then(m => ({ default: m.CategoryFeedScreen })));
 const DetailScreen       = lazy(() => import("./screens/DetailScreen").then(m => ({ default: m.DetailScreen })));
 const PriceHistoryScreen = lazy(() => import("./screens/PriceHistoryScreen").then(m => ({ default: m.PriceHistoryScreen })));
@@ -48,6 +49,7 @@ export default function App() {
   const [activeNav, setActiveNav] = useState<string>("home");
   const [selProduct, setSelProduct] = useState<Product | null>(null);
   const [selCat, setSelCat]         = useState<Category | null>(null);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [loginModal, setLoginModal] = useState<boolean | null>(null);
   const [user, setUser]             = useState<User | null>(null);
   const [toast, setToast]           = useState<{ msg: string; visible: boolean }>({ msg: "", visible: false });
@@ -162,15 +164,16 @@ export default function App() {
     });
   }, []);
 
-  const goTo = useCallback((s: string) => {
+  const goTo = useCallback((s: string, extra: Record<string, unknown> = {}) => {
     saveScroll();
-    window.history.pushState({ screen: s }, "");
+    window.history.pushState({ screen: s, ...extra }, "");
     setScreen(s);
     requestAnimationFrame(() => { if (mainRef.current) mainRef.current.scrollTop = 0; });
   }, [saveScroll]);
 
   const goCategory = useCallback((cat: Category) => { setSelCat(cat); goTo("feed"); setActiveNav("home"); }, [goTo]);
   const goProduct  = useCallback((p: Product) => { setSelProduct(p); goTo("detail"); trackEvent("product_view", { product_id: p.id, product_name: p.name, price: p.price }); }, [goTo]);
+  const goSearch   = useCallback((keyword: string) => { setSearchKeyword(keyword); goTo("search", { keyword }); setActiveNav("home"); }, [goTo]);
   const goBack     = useCallback(() => window.history.back(), []);
   const goHome     = useCallback(() => { goTo("home"); setActiveNav("home"); }, [goTo]);
 
@@ -191,7 +194,9 @@ export default function App() {
 
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
-      const target: string = (e.state as { screen?: string } | null)?.screen ?? "home";
+      const state = e.state as { screen?: string; keyword?: string } | null;
+      const target: string = state?.screen ?? "home";
+      if (target === "search" && state?.keyword) setSearchKeyword(state.keyword);
       restoreScroll(target);
       setScreen(target);
     };
@@ -226,7 +231,8 @@ export default function App() {
 
   const renderScreen = () => {
     switch (screen) {
-      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
+      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} showLogin={showLogin} showToast={showToast}/>;
+      case "search":   return <SearchResultScreen keyword={searchKeyword} onBack={goBack} onProduct={goProduct}/>;
       case "feed":     return selCat ? <CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/> : null;
       case "detail":   return selProduct ? <DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/> : null;
       case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct} showToast={showToast}/>;
@@ -246,7 +252,7 @@ export default function App() {
       case "howto":    return <HowToUseScreen onBack={goBack}/>;
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
-      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} showLogin={showLogin} showToast={showToast}/>;
+      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} showLogin={showLogin} showToast={showToast}/>;
     }
   };
 

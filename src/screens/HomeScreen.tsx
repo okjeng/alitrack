@@ -8,21 +8,17 @@ import type { Category } from "../types";
 interface HomeScreenProps {
   onCategory: (cat: Category) => void;
   onProduct: (p: import("../types").Product) => void;
+  onSearch: (keyword: string) => void;
   showLogin: () => void;
   showToast: (msg: string) => void;
 }
 
-export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showToast }: HomeScreenProps) => {
+export const HomeScreen = ({ onCategory, onProduct, onSearch, showLogin: _showLogin, showToast }: HomeScreenProps) => {
   const [tab, setTab]               = useState("hotdeal");
   const [bannerIdx, setBannerIdx]   = useState(0);
   const [catLoading, setCatLoading] = useState(false);
   const [activeCat, setActiveCat]   = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-
-  useEffect(() => {
-    if (!searchQuery.trim()) setActiveSearch("");
-  }, [searchQuery]);
   const isPaused    = useRef(false);
   const bannerTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -55,14 +51,12 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
 
   const handleSearch = () => {
     const q = searchQuery.trim();
-    console.log("[1] handleSearch 호출됨, q =", JSON.stringify(q));
     if (!q) return;
-    setActiveSearch(q);
-    console.log("[2] setActiveSearch 호출됨, q =", JSON.stringify(q));
     trackEvent("search", { search_term: q });
+    onSearch(q);
   };
 
-  const clearSearch = () => { setSearchQuery(""); setActiveSearch(""); };
+  const clearSearch = () => setSearchQuery("");
 
   const copyCode = async (code: string) => {
     try { await copyToClipboard(code); showToast(`"${code}" 코드가 복사되었습니다!`); }
@@ -167,20 +161,9 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
             </div>
           </div>
 
-          {activeSearch ? (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-gray-900">🔍 &ldquo;{activeSearch}&rdquo; 검색결과</p>
-                <button onClick={clearSearch} className="text-xs text-orange-500 font-semibold active:text-orange-600 transition">초기화</button>
-              </div>
-              {console.log("[3] InfiniteProductGrid 렌더링, keyword =", JSON.stringify(activeSearch)) as unknown as null}
-              <InfiniteProductGrid key={activeSearch} onProduct={onProduct} keyword={activeSearch} sort="default" rankKeyword={activeSearch} />
-            </div>
-          ) : (
-            <div id="hot-products-section">
-              <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
-            </div>
-          )}
+          <div id="hot-products-section">
+            <InfiniteProductGrid onProduct={onProduct} title="🔥 지금 핫한 상품들" />
+          </div>
           <LegalFooter />
         </>
       ) : (
