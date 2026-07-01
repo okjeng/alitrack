@@ -108,9 +108,9 @@ describe("ProductCard", () => {
     expect(onProduct).toHaveBeenCalledWith(mockProduct);
   });
 
-  it("배송일 정보를 표시한다", () => {
+  it("신뢰할 수 없는 배송일 문구는 표시하지 않는다", () => {
     render(<ProductCard product={mockProduct} onProduct={vi.fn()} />);
-    expect(screen.getByText(/5일 내 도착/)).toBeInTheDocument();
+    expect(screen.queryByText(/일 내 도착/)).not.toBeInTheDocument();
   });
 });
 

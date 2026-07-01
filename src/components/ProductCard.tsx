@@ -25,11 +25,6 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
         </span>
       </div>
       <div className="p-2.5 space-y-1">
-        {p.deliveryDays > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#00C07F] bg-green-50 px-1.5 py-0.5 rounded-full">
-            🚀 {p.deliveryDays}일 내 도착
-          </span>
-        )}
         <p className="text-[11px] font-semibold text-gray-800 leading-snug"
            style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
           {p.name}
