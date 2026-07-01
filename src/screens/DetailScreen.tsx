@@ -83,7 +83,6 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
               </div>
               <p className="text-sm text-gray-400 line-through">{fmt(product.orig)}</p>
             </div>
-            <p className="text-xs text-[#00C07F] font-bold mt-1">🚀 무료배송</p>
             <p className="text-xs text-gray-400 mt-0.5">⭐ {product.rating} 평점 ({product.reviews.toLocaleString()}개 리뷰)</p>
           </div>
 
