@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { trackEvent } from "../utils";
 import { HOME_CATEGORIES, HOME_SECTION_COPY, PRAISED_MIN_RATING_CASCADE, sortByVolumeDesc } from "../data/homeSectionCopy";
 import { HorizontalProductRail } from "../components/HorizontalProductRail";
@@ -21,6 +21,33 @@ export const HomeScreen = ({
 }: HomeScreenProps) => {
   const [searchQuery, setSearchQuery]     = useState("");
   const [activeCategory, setActiveCategory] = useState(HOME_CATEGORIES[0]);
+  const categoryBarSlotRef = useRef<HTMLDivElement>(null);
+  const [appHeaderHeight, setAppHeaderHeight] = useState(57);
+  const [categoryBarHeight, setCategoryBarHeight] = useState(0);
+  const [isStuck, setIsStuck] = useState(false);
+
+  // App.tsx의 <main>이 overflow-y:auto라 그 안에서는 sticky가 동작하지 않아서(실제 스크롤은
+  // <main> 내부가 아니라 문서/윈도우 레벨에서 일어남) 카테고리 바 원래 자리를 벗어나는 시점을
+  // 매 스크롤마다 실측(getBoundingClientRect)해서 직접 감지 — 위쪽 레일 섹션들이 상품 데이터를
+  // 비동기로 늦게 불러와도(레이아웃 높이가 나중에 바뀌어도) 항상 최신 위치 기준으로 판단하기 위해
+  // 값을 캐싱하지 않고 매번 다시 읽음. 헤더 높이는 하드코딩하지 않고 실측해서
+  // App.tsx를 건드리지 않고도 안전하게 맞춤.
+  useLayoutEffect(() => {
+    const header = document.querySelector("header");
+    if (header) setAppHeaderHeight(header.getBoundingClientRect().height);
+    if (categoryBarSlotRef.current) setCategoryBarHeight(categoryBarSlotRef.current.offsetHeight);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const slot = categoryBarSlotRef.current;
+      if (!slot) return;
+      setIsStuck(slot.getBoundingClientRect().top <= appHeaderHeight);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [appHeaderHeight]);
 
   const handleSearch = () => {
     const q = searchQuery.trim();
@@ -30,6 +57,24 @@ export const HomeScreen = ({
   };
 
   const clearSearch = () => setSearchQuery("");
+
+  const categoryBarInner = (
+    <>
+      <p className="text-left text-gray-900 mb-2" style={{ fontWeight: 700, fontSize: 14 }}>카테고리</p>
+      <div className="flex gap-2 overflow-x-auto scrollbar-none">
+        {HOME_CATEGORIES.map(cat => (
+          <button key={cat.id} onClick={() => setActiveCategory(cat)}
+            aria-current={activeCategory.id === cat.id ? "true" : undefined}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 rounded-xl transition ${
+              activeCategory.id === cat.id ? "bg-orange-500 text-white" : "bg-[#F7F7F8] text-gray-600"
+            }`}
+            style={{ height: 40, fontSize: 12, fontWeight: 600 }}>
+            <span>{cat.icon}</span>{cat.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <div className="pb-6">
@@ -86,20 +131,17 @@ export const HomeScreen = ({
         />
       </div>
 
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-4 py-3 mt-4 border-y border-gray-100">
-        <div className="flex gap-2 overflow-x-auto scrollbar-none">
-          {HOME_CATEGORIES.map(cat => (
-            <button key={cat.id} onClick={() => setActiveCategory(cat)}
-              aria-current={activeCategory.id === cat.id ? "true" : undefined}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 rounded-xl transition ${
-                activeCategory.id === cat.id ? "bg-orange-500 text-white" : "bg-[#F7F7F8] text-gray-600"
-              }`}
-              style={{ height: 40, fontSize: 12, fontWeight: 600 }}>
-              <span>{cat.icon}</span>{cat.label}
-            </button>
-          ))}
-        </div>
+      <div ref={categoryBarSlotRef} className="bg-white/95 backdrop-blur-sm px-4 py-3 mt-4 border-y border-gray-100"
+           style={isStuck ? { height: categoryBarHeight, padding: 0, border: "none" } : undefined}>
+        {!isStuck && categoryBarInner}
       </div>
+      {isStuck && (
+        <div className="fixed left-0 right-0 z-10 flex justify-center" style={{ top: appHeaderHeight }}>
+          <div className="w-full bg-white/95 backdrop-blur-sm px-4 py-3 border-y border-gray-100" style={{ maxWidth: 600 }}>
+            {categoryBarInner}
+          </div>
+        </div>
+      )}
 
       <div className="px-4 pt-4">
         <InfiniteProductGrid key={activeCategory.id} onProduct={onProduct} keyword={activeCategory.keyword} />
