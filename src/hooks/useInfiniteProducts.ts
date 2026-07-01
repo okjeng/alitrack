@@ -28,6 +28,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
   const keywordRef     = useRef(keyword);
   const sortRef        = useRef(sort);
   const initializedRef = useRef(false);
+  const controllerRef  = useRef<AbortController | null>(null);
 
   const fetchPage = (pageNum: number, kw = keywordRef.current, s = sortRef.current) => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -35,6 +36,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     setLoading(true);
     setError(null);
     const controller = new AbortController();
+    controllerRef.current = controller;
     const timeout = setTimeout(() => controller.abort(), 10000);
     const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: s });
     console.log("[6] fetchPage 실행, kw =", JSON.stringify(kw));
@@ -94,7 +96,10 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     sortRef.current    = sort;
     console.log("[8] fetchPage(1) 직전, keyword =", JSON.stringify(keyword));
     fetchPage(1, keyword, sort);
-    return () => { loadingRef.current = false; };
+    return () => {
+      controllerRef.current?.abort();
+      loadingRef.current = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword, sort]);
 
