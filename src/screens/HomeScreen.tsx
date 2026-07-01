@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { trackEvent } from "../utils";
-import { HOME_CATEGORIES, HOME_SECTION_COPY } from "../data/homeSectionCopy";
+import { HOME_CATEGORIES, HOME_SECTION_COPY, PRAISED_MIN_RATING_CASCADE, sortByVolumeDesc } from "../data/homeSectionCopy";
 import { HorizontalProductRail } from "../components/HorizontalProductRail";
+import { MallPriceRail } from "../components/MallPriceRail";
 import { InfiniteProductGrid } from "../components/InfiniteProductGrid";
 import { LegalFooter } from "../components/ui/index";
 import type { Category, Product } from "../types";
@@ -16,7 +17,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen = ({
-  onCategory: _onCategory, onProduct, onSearch, onNavigate, showLogin: _showLogin, showToast: _showToast,
+  onCategory: _onCategory, onProduct, onSearch, onNavigate, showLogin: _showLogin, showToast,
 }: HomeScreenProps) => {
   const [searchQuery, setSearchQuery]     = useState("");
   const [activeCategory, setActiveCategory] = useState(HOME_CATEGORIES[0]);
@@ -71,10 +72,17 @@ export const HomeScreen = ({
           onProduct={onProduct}
         />
         <HorizontalProductRail
-          title={HOME_SECTION_COPY.trusted.title}
+          title={HOME_SECTION_COPY.praised.title}
           sort="default"
-          minRating={98}
+          count={30}
+          minRatingCascade={PRAISED_MIN_RATING_CASCADE}
+          sortBy={sortByVolumeDesc}
           onProduct={onProduct}
+        />
+        <MallPriceRail
+          title={HOME_SECTION_COPY.priceFinal.title}
+          moreLabel={HOME_SECTION_COPY.priceFinal.moreLabel}
+          onMore={() => showToast("준비 중인 기능이에요. 조금만 기다려주세요!")}
         />
       </div>
 

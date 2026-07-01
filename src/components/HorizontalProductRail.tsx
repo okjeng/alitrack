@@ -6,15 +6,17 @@ import { HOME_SECTION_COPY } from "../data/homeSectionCopy";
 interface HorizontalProductRailProps {
   title: string;
   sort: string;
-  minRating?: number;
+  count?: number;
+  minRatingCascade?: number[];
+  sortBy?: (a: Product, b: Product) => number;
   moreLabel?: string;
   onMore?: () => void;
   onProduct: (p: Product) => void;
 }
 
-// 섹션 헤더(제목+더보기) + 가로 스크롤 카드 목록 (최대 15장, 무한스크롤 아님)
-export const HorizontalProductRail = ({ title, sort, minRating, moreLabel, onMore, onProduct }: HorizontalProductRailProps) => {
-  const { items, loading, error } = useTopProducts(sort, 15, minRating);
+// 섹션 헤더(제목+더보기) + 가로 스크롤 카드 목록 (최대 count장, 무한스크롤 아님)
+export const HorizontalProductRail = ({ title, sort, count = 15, minRatingCascade, sortBy, moreLabel, onMore, onProduct }: HorizontalProductRailProps) => {
+  const { items, loading, error } = useTopProducts(sort, count, minRatingCascade, sortBy);
 
   return (
     <div className="p-4" style={{ borderRadius: 24, background: "#FAFAFA" }}>
