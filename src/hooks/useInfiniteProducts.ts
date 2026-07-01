@@ -88,6 +88,7 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     sortRef.current    = sort;
     console.log("[8] fetchPage(1) 직전, keyword =", JSON.stringify(keyword));
     fetchPage(1, keyword, sort);
+    return () => { loadingRef.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword, sort]);
 

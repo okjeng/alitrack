@@ -19,6 +19,10 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
   const [activeCat, setActiveCat]   = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+
+  useEffect(() => {
+    if (!searchQuery.trim()) setActiveSearch("");
+  }, [searchQuery]);
   const isPaused    = useRef(false);
   const bannerTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -73,9 +77,9 @@ export const HomeScreen = ({ onCategory, onProduct, showLogin: _showLogin, showT
         <div className="relative flex-1">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
           <input value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); if (!e.target.value.trim()) setActiveSearch(""); }}
+            onChange={e => setSearchQuery(e.target.value)}
             onFocus={e => e.target.select()}
-            onKeyDown={e => e.key === "Enter" && handleSearch()}
+            onKeyDown={e => e.key === "Enter" && !e.nativeEvent.isComposing && handleSearch()}
             placeholder="알리 꿀템 검색" aria-label="상품 검색"
             className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-[#F7F7F8] text-sm text-gray-800 placeholder-gray-400 outline-none" />
           {searchQuery && (
