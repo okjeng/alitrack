@@ -30,7 +30,7 @@ export const useInfiniteCarousel = ({ itemCount, cloneCount = 10 }: UseInfiniteC
   const containerRef = useRef<HTMLDivElement>(null);
   const strideRef = useRef(0);
   const readyRef = useRef(false);
-  const dragRef = useRef<{ startX: number; startScrollLeft: number; moved: boolean } | null>(null);
+  const dragRef = useRef<{ startX: number; startScrollLeft: number; moved: boolean; pointerId: number } | null>(null);
   const suppressClickRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -86,16 +86,21 @@ export const useInfiniteCarousel = ({ itemCount, cloneCount = 10 }: UseInfiniteC
     if (e.pointerType !== "mouse") return;
     const el = containerRef.current;
     if (!el) return;
-    dragRef.current = { startX: e.clientX, startScrollLeft: el.scrollLeft, moved: false };
+    dragRef.current = { startX: e.clientX, startScrollLeft: el.scrollLeft, moved: false, pointerId: e.pointerId };
     setIsDragging(true);
-    el.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || !dragRef.current) return;
     const el = containerRef.current;
     if (!el) return;
     const delta = e.clientX - dragRef.current.startX;
-    if (Math.abs(delta) > DRAG_CLICK_THRESHOLD) dragRef.current.moved = true;
+    // 임계값을 처음 넘는 그 순간에만 포인터 캡처 — 단순 클릭(pointerdown→pointerup, 이동 없음)에는
+    // 캡처가 걸리지 않아야 클릭 이벤트가 카드 버튼으로 정상 전달됨(캡처가 걸리면 pointerup이
+    // 컨테이너로 리다이렉트되어 카드의 onClick이 아예 실행되지 않는 문제가 있었음)
+    if (!dragRef.current.moved && Math.abs(delta) > DRAG_CLICK_THRESHOLD) {
+      dragRef.current.moved = true;
+      el.setPointerCapture(dragRef.current.pointerId);
+    }
     el.scrollLeft = dragRef.current.startScrollLeft - delta;
   };
   const endDrag = (e: React.PointerEvent) => {
