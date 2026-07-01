@@ -1,6 +1,5 @@
-import { useMemo } from "react";
 import type { Product } from "../types";
-import { fmt, avg60, idToSeed, generateHistory } from "../utils";
+import { fmt } from "../utils";
 import { TAG_COLORS, FALLBACK_IMAGE } from "../data/constants";
 
 interface ProductCardProps {
@@ -9,9 +8,6 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
-  const hist = useMemo(() => generateHistory(p.price, idToSeed(p.id)), [p.id, p.price]);
-  const av   = useMemo(() => avg60(hist), [hist]);
-  const diff = av - p.price;
   const saved = p.discount > 0 && p.orig > p.price ? p.orig - p.price : 0;
 
   return (
@@ -47,11 +43,7 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" style={{ boxShadow:"0 0 4px #22c55e" }} />
           실시간 가격 동기화 <span className="text-[8px] text-gray-400">(환율 반영)</span>
         </span>
-        {diff > 0
-          ? <p className="text-[10px] text-orange-500 font-semibold leading-tight">평균 대비 {fmt(Math.round(diff/100)*100)} 저렴!</p>
-          : <p className="text-[10px] text-blue-500 font-semibold">현재 최저가 근접 중</p>
-        }
-        <p className="text-[10px] text-gray-400">⭐ {p.rating} ({p.reviews.toLocaleString()})</p>
+        <p className="text-[10px] text-gray-400">⭐ {p.rating}</p>
       </div>
     </button>
   );

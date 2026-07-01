@@ -44,6 +44,10 @@ export const RailProductCard = ({ product: p, onProduct }: RailProductCardProps)
             <span className="line-through">{fmt(p.orig)}</span> 💸 {fmt(saved)} 이득
           </p>
         )}
+        <span className="inline-flex items-center gap-1 leading-tight" style={{ fontSize: 9, color: "#00C07F" }}>
+          <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#22c55e", boxShadow: "0 0 4px #22c55e" }} />
+          실시간 가격 동기화 <span style={{ fontSize: 8, color: "#9CA3AF" }}>(환율 반영)</span>
+        </span>
       </div>
     </button>
   );
