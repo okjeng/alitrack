@@ -14,7 +14,6 @@ interface UseInfiniteProductsResult {
 }
 
 export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfiniteProductsResult => {
-  console.log("[5] useInfiniteProducts 호출됨, keyword =", JSON.stringify(keyword));
   const [items, setItems]             = useState<Product[]>([]);
   const [page, setPage]               = useState(0);
   const [loading, setLoading]         = useState(false);
@@ -39,20 +38,15 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     controllerRef.current = controller;
     const timeout = setTimeout(() => controller.abort(), 10000);
     const params = new URLSearchParams({ page: String(pageNum), size: String(PAGE_SIZE), sort: s });
-    console.log("[6] fetchPage 실행, kw =", JSON.stringify(kw));
     if (kw) params.set("keyword", kw);
-    console.log("[9] fetch 요청 URL =", `${API_BASE}/api/ali/products?${params}`);
     fetch(`${API_BASE}/api/ali/products?${params}`, { signal: controller.signal })
       .then(res => {
         clearTimeout(timeout);
-        console.log("[10] fetch 응답 status =", res.status, "ok =", res.ok);
         if (!res.ok) throw new Error(String(res.status));
         return res.json();
       })
       .then((data: { products?: unknown[]; total?: number }) => {
-        console.log("[11] res.json() 파싱 결과, data.total =", data.total, "data.products?.length =", data.products?.length);
         const newItems: Product[] = (data.products || []).map(p => mapProduct(p as Record<string, unknown>));
-        console.log("[12] mapProduct 매핑 후 newItems.length =", newItems.length);
         if (newItems.length === 0) {
           hasMoreRef.current = false;
           setHasMore(false);
@@ -60,7 +54,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
           setItems(prev => {
             const existingIds = new Set(prev.map(p => p.id));
             const unique = newItems.filter(p => !existingIds.has(p.id));
-            console.log("[13] setItems, prev.length =", prev.length, "unique.length =", unique.length);
             if (unique.length === 0) return prev;
             return [...prev, ...unique];
           });
@@ -70,7 +63,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
       })
       .catch((e: Error) => {
         clearTimeout(timeout);
-        console.log("[14] catch 진입, error =", e.name, e.message);
         setError(e.name === "AbortError" ? "요청 시간이 초과됐습니다." : "상품을 불러오지 못했습니다.");
       })
       .finally(() => {
@@ -82,7 +74,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
 
   // keyword/sort 변경 시 초기화 후 재요청
   useEffect(() => {
-    console.log("[7] useEffect 실행, keyword(클로저) =", JSON.stringify(keyword), "keywordRef.current(before) =", JSON.stringify(keywordRef.current));
     setItems([]);
     setPage(0);
     setHasMore(true);
@@ -94,7 +85,6 @@ export const useInfiniteProducts = (keyword = "", sort = "default"): UseInfinite
     loadingRef.current = false;
     keywordRef.current = keyword;
     sortRef.current    = sort;
-    console.log("[8] fetchPage(1) 직전, keyword =", JSON.stringify(keyword));
     fetchPage(1, keyword, sort);
     return () => {
       controllerRef.current?.abort();

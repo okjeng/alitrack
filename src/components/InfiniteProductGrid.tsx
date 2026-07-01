@@ -14,7 +14,6 @@ interface InfiniteProductGridProps {
 }
 
 export const InfiniteProductGrid = ({ onProduct, title, keyword, sort, rankKeyword }: InfiniteProductGridProps) => {
-  console.log("[4] InfiniteProductGrid 함수 실행, keyword prop =", JSON.stringify(keyword));
   const { items, loading, initialized, loaderRef, hasMore, error, retry } = useInfiniteProducts(keyword, sort);
   const displayItems = useMemo(
     () => rankKeyword ? rankBySearch(items, rankKeyword) as Product[] : items,
