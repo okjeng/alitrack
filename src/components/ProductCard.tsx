@@ -12,6 +12,7 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
   const hist = useMemo(() => generateHistory(p.price, idToSeed(p.id)), [p.id, p.price]);
   const av   = useMemo(() => avg60(hist), [hist]);
   const diff = av - p.price;
+  const saved = p.discount > 0 && p.orig > p.price ? p.orig - p.price : 0;
 
   return (
     <button onClick={() => onProduct(p)} aria-label={`${p.name} 상세보기`}
@@ -30,13 +31,18 @@ export const ProductCard = ({ product:p, onProduct }: ProductCardProps) => {
           {p.name}
         </p>
         <div className="flex items-center gap-1.5">
-          <p className="text-base font-extrabold text-gray-900">{fmt(p.price)}</p>
           {p.discount > 0
-            ? <span className="text-[11px] font-bold text-red-500">▼ {p.discount}%</span>
+            ? <span className="text-[11px] font-bold text-red-500">▼{p.discount}%</span>
             : p.discount < 0
-            ? <span className="text-[11px] font-bold text-blue-500">▲ {Math.abs(p.discount)}%</span>
+            ? <span className="text-[11px] font-bold text-blue-500">▲{Math.abs(p.discount)}%</span>
             : null}
+          <p className="text-base font-extrabold text-gray-900">{fmt(p.price)}</p>
         </div>
+        {saved > 0 && (
+          <p className="text-[10px] text-gray-400">
+            <span className="line-through">{fmt(p.orig)}</span> 💸 {fmt(saved)} 이득
+          </p>
+        )}
         <span className="inline-flex items-center gap-1 text-[9px] text-green-600 leading-tight">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" style={{ boxShadow:"0 0 4px #22c55e" }} />
           실시간 가격 동기화 <span className="text-[8px] text-gray-400">(환율 반영)</span>
