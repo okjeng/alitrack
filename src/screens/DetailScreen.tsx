@@ -82,6 +82,11 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
                   : null}
               </div>
               <p className="text-sm text-gray-400 line-through">{fmt(product.orig)}</p>
+              {product.orig - product.price > 0 && (
+                <p className="text-xs font-bold text-orange-500 mt-0.5">
+                  💸 {fmt(product.orig - product.price)} 이득
+                </p>
+              )}
             </div>
             <p className="text-xs text-gray-400 mt-0.5">⭐ {product.rating} 평점 ({product.reviews.toLocaleString()}개 리뷰)</p>
           </div>
@@ -99,27 +104,6 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
               </button>
             ))}
           </div>
-
-          {(() => {
-            const orig  = product.orig || Math.round(product.price * 1.4);
-            const saved = orig - product.price;
-            const maxSave = orig - minP;
-            if (saved <= 0) return null;
-            return (
-              <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">
-                <p className="text-[10px] font-bold text-emerald-600 tracking-wide mb-1">💰 지금 구매하면 절감되는 금액</p>
-                <div className="flex items-end gap-2">
-                  <p className="text-2xl font-extrabold text-emerald-600">{fmt(saved)}</p>
-                  <p className="text-xs text-emerald-500 mb-0.5 line-through">{fmt(orig)}</p>
-                </div>
-                {minP < product.price && (
-                  <p className="text-[11px] text-emerald-700 mt-1.5 font-semibold">
-                    📉 역대 최저가 {fmt(minP)}까지 떨어지면 최대 {fmt(maxSave)} 절감 가능
-                  </p>
-                )}
-              </div>
-            );
-          })()}
 
           <PriceRangeChart hist={hist} minP={minP} maxP={maxP} />
           <WeeklyPatternCard basePrice={product.price} seed={seed} />
