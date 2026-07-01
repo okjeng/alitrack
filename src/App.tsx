@@ -19,6 +19,7 @@ const LoggedInMypage          = lazy(() => import("./components/MyPage").then(m 
 // 화면 — 라우터가 전환 시 lazy 로드
 const HomeScreen         = lazy(() => import("./screens/HomeScreen").then(m => ({ default: m.HomeScreen })));
 const SearchResultScreen = lazy(() => import("./screens/SearchResultScreen").then(m => ({ default: m.SearchResultScreen })));
+const ProductListScreen  = lazy(() => import("./screens/ProductListScreen").then(m => ({ default: m.ProductListScreen })));
 const CategoryFeedScreen = lazy(() => import("./screens/CategoryFeedScreen").then(m => ({ default: m.CategoryFeedScreen })));
 const DetailScreen       = lazy(() => import("./screens/DetailScreen").then(m => ({ default: m.DetailScreen })));
 const PriceHistoryScreen = lazy(() => import("./screens/PriceHistoryScreen").then(m => ({ default: m.PriceHistoryScreen })));
@@ -231,8 +232,10 @@ export default function App() {
 
   const renderScreen = () => {
     switch (screen) {
-      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} showLogin={showLogin} showToast={showToast}/>;
+      case "home":     return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} onNavigate={goTo} showLogin={showLogin} showToast={showToast}/>;
       case "search":   return <SearchResultScreen keyword={searchKeyword} onBack={goBack} onProduct={goProduct}/>;
+      case "trending": return <ProductListScreen title="🏆 인기 급상승" sort="default" onBack={goBack} onProduct={goProduct}/>;
+      case "megaDeal": return <ProductListScreen title="✂️ 초특가 찬스" sort="discount" onBack={goBack} onProduct={goProduct}/>;
       case "feed":     return selCat ? <CategoryFeedScreen cat={selCat} onBack={goBack} onProduct={goProduct}/> : null;
       case "detail":   return selProduct ? <DetailScreen product={selProduct} onBack={goBack} showLogin={showLogin} showToast={showToast} user={user}/> : null;
       case "history":  return <PriceHistoryScreen onBack={goBack} onScrollToProducts={scrollToProducts} onProduct={goProduct} showToast={showToast}/>;
@@ -252,7 +255,7 @@ export default function App() {
       case "howto":    return <HowToUseScreen onBack={goBack}/>;
       case "privacy":  return <PrivacyScreen onBack={goBack}/>;
       case "terms":    return <TermsScreen onBack={goBack}/>;
-      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} showLogin={showLogin} showToast={showToast}/>;
+      default:         return <HomeScreen onCategory={goCategory} onProduct={goProduct} onSearch={goSearch} onNavigate={goTo} showLogin={showLogin} showToast={showToast}/>;
     }
   };
 
