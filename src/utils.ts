@@ -91,7 +91,6 @@ export const rankBySearch = (
     return hits > 0 ? hits / words.length : 0;
   };
   return [...items]
-    .filter(item => score(item) > 0)
     .sort((a, b) => score(b) - score(a));
 };
 
