@@ -8,6 +8,16 @@ interface CoupangCompareCardProps {
   affiliateUrl: string;
 }
 
+const ALI_COLOR = "#FF6B00";
+
+interface InfoRowProps { label: string; value: string; accent: string; }
+const InfoRow = ({ label, value, accent }: InfoRowProps) => (
+  <div className="py-2" style={{ borderTop: "1px solid #F0F0F0" }}>
+    <p className="text-[10px] text-gray-400">{label}</p>
+    <p className="text-sm font-bold mt-0.5" style={{ color: accent }}>{value}</p>
+  </div>
+);
+
 export const CoupangCompareCard = ({ productName, currentPrice, discount, affiliateUrl }: CoupangCompareCardProps) => {
   const coupangUrl = buildCoupangUrl(extractKeyword(productName));
 
@@ -18,39 +28,45 @@ export const CoupangCompareCard = ({ productName, currentPrice, discount, affili
       </p>
 
       <div className="flex gap-2">
-        {/* 알리익스프레스 */}
-        <div className="flex-1 bg-white rounded-2xl p-3" style={{ boxShadow: "0 2px 10px rgba(0,0,0,.06)" }}>
-          <p className="text-sm font-bold text-gray-800 mb-2">AliExpress</p>
-          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-            <p className="text-lg font-extrabold text-gray-900">{fmt(currentPrice)}</p>
+        {/* 알리익스프레스 — 주황색 강조 */}
+        <div className="flex-1 bg-white p-3"
+             style={{ borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,.06)", border: `1.5px solid ${ALI_COLOR}` }}>
+          <p className="text-sm mb-1" style={{ color: ALI_COLOR, fontWeight: 700 }}>AliExpress</p>
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <p className="text-xl" style={{ color: ALI_COLOR, fontWeight: 800 }}>{fmt(currentPrice)}</p>
             {discount > 0 && (
               <span className="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded-full">-{discount}%</span>
             )}
           </div>
-          <div className="space-y-1 mb-3">
-            <p className="text-[11px] text-gray-500">배송 <span className="text-gray-700 font-semibold">15~25일</span></p>
-            <p className="text-[11px] text-gray-500">배송비 <span className="text-gray-700 font-semibold">무료</span></p>
-            <p className="text-[11px] text-gray-500">특징 <span className="text-orange-600 font-bold">최저가</span></p>
+
+          <div style={{ borderBottom: "1px solid #F0F0F0" }}>
+            <InfoRow label="배송"   value="15~25일"      accent="#111827" />
+            <InfoRow label="배송비" value="상품마다 상이" accent="#111827" />
+            <InfoRow label="특징"   value="최저가"        accent={ALI_COLOR} />
           </div>
+
           <a href={affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
-             className="block text-center text-white font-bold text-xs py-2.5 rounded-xl"
+             className="block text-center text-white font-bold text-xs py-2.5 rounded-xl mt-3"
              style={{ background: "linear-gradient(135deg,#FF5A1F,#f7462a)" }}>
             알리에서 구매하기
           </a>
         </div>
 
-        {/* 쿠팡 */}
-        <div className="flex-1 bg-white rounded-2xl p-3" style={{ boxShadow: "0 2px 10px rgba(0,0,0,.06)" }}>
-          <p className="text-sm font-bold text-gray-800 mb-2">Coupang</p>
-          <p className="text-sm font-bold text-gray-700 mb-2" style={{ minHeight: 28 }}>빠른 배송이 필요하다면?</p>
-          <div className="space-y-1 mb-3">
-            <p className="text-[11px] text-gray-500">배송 <span className="text-gray-700 font-semibold">1~3일</span></p>
-            <p className="text-[11px] text-gray-500">배송비 <span className="text-gray-700 font-semibold">무료 (로켓배송)</span></p>
-            <p className="text-[11px] text-gray-500">특징 <span className="text-red-600 font-bold">가장 빠름</span></p>
+        {/* 쿠팡 — 회색 톤, 유도 문구 강조 */}
+        <div className="flex-1 bg-white p-3"
+             style={{ borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,.06)", border: "1.5px solid #D1D5DB" }}>
+          <p className="text-sm font-bold text-gray-700 mb-1">Coupang</p>
+          <p className="text-base font-extrabold text-gray-800 mb-1" style={{ minHeight: 28 }}>빠른 배송이 필요하다면?</p>
+
+          <div style={{ borderBottom: "1px solid #F0F0F0" }}>
+            <InfoRow label="배송"   value="1~3일"        accent="#111827" />
+            <InfoRow label="배송비" value="상품마다 상이" accent="#111827" />
+            <InfoRow label="특징"   value="가장 빠름"     accent="#4B5563" />
           </div>
+
           <a href={coupangUrl} target="_blank" rel="noopener noreferrer"
-             className="block text-center text-white font-bold text-xs py-2.5 rounded-xl"
-             style={{ background: "linear-gradient(135deg,#E53935,#B71C1C)" }}>
+             className="block text-center text-white font-bold text-xs py-2.5 rounded-xl mt-3"
+             style={{ background: "linear-gradient(135deg,#1F2937,#374151)" }}>
             쿠팡에서 확인하기 →
           </a>
           <p className="text-[9px] text-gray-400 text-center mt-1.5">최종 가격은 쿠팡에서 직접 확인하세요</p>
