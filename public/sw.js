@@ -1,4 +1,4 @@
-const CACHE = "alitrack-v10";
+const CACHE = "alitrack-v11";
 const PRECACHE = ["/", "/index.html"];
 
 self.addEventListener("install", e =>
@@ -26,6 +26,24 @@ self.addEventListener("fetch", e => {
     url.hostname.includes("aliexpress-media.com") ||
     url.hostname.includes("aliexpress.com");
   if (isExternalImage) return;
+
+  // JS/CSS 청크는 파일명 자체가 content-hash라 내용이 바뀌면 URL도 항상 바뀜.
+  // network-first로 최신 청크를 먼저 시도하고, 네트워크 실패(오프라인 등) 시에만 캐시로 폴백.
+  // (예전 cache-first 방식은 배포 후에도 예전 캐시를 그대로 반환해 "Failed to fetch
+  //  dynamically imported module" 흰 화면의 원인이 됐음)
+  if (url.pathname.startsWith("/assets/")) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok) {
@@ -33,7 +51,7 @@ self.addEventListener("fetch", e => {
         caches.open(CACHE).then(c => c.put(e.request, clone));
       }
       return res;
-    }))
+    }).catch(() => cached))
   );
 });
 
