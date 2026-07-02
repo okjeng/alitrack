@@ -110,7 +110,7 @@ export const DetailScreen = ({ product, onBack, showLogin, showToast, user }: De
           <NextSaleCountdown currentPrice={product.price} />
           <PriceTimeline hist={hist} currentPrice={product.price} />
           <SellerCompareCard product={product} />
-          <CoupangCompareCard productName={product.name} currentPrice={product.price} />
+          <CoupangCompareCard productName={product.name} currentPrice={product.price} discount={product.discount} affiliateUrl={affiliateUrl} />
           <LegalFooter />
         </div>
       </div>
